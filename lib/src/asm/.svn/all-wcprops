@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svnroot/xaos/!svn/ver/490/trunk/src/sffe/asm
+END
+cmplx.asm
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svnroot/xaos/!svn/ver/292/trunk/src/sffe/asm/cmplx.asm
+END
+cmplx.S
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svnroot/xaos/!svn/ver/490/trunk/src/sffe/asm/cmplx.S
+END
+build_win.sh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svnroot/xaos/!svn/ver/223/trunk/src/sffe/asm/build_win.sh
+END
+build.sh
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svnroot/xaos/!svn/ver/223/trunk/src/sffe/asm/build.sh
+END
