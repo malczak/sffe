@@ -1,15 +1,11 @@
 /*/////////////////////////////////////////////////////////////////////////////////////
 // project : sFFe ( SegFault (or Segmentation Fault :) ) formula evalutaor )
 // author  : Mateusz Malczak ( mateusz@malczak.info )
-// wpage   : www.segfaultlabs.com/projects/sffe
-///////////////////////////////////////////////////////////////////////////////////////
-// special build for XaoS, for more info visit
-// http://www.segfaultlabs.com/projects/sfXaos
+// wpage   :
 /////////////////////////////////////////////////////////////////////////////////////*/
 #ifndef SFFE_CMPLX_GSL_H
 #define SFFE_CMPLX_GSL_H
 
-#include <config.h>
 #ifdef SFFE_CMPLX_GSL
 
 #include "sffe.h"
@@ -22,6 +18,10 @@
 #define cmplxset(c,r,i) GSL_SET_COMPLEX(&c,r,i)
 #define real(c) GSL_REAL((c))
 #define imag(c) GSL_IMAG((c))
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 sfarg *sfadd(sfarg * const p);	/*  +  */
 sfarg *sfsub(sfarg * const p);	/*  -  */
@@ -67,6 +67,7 @@ void sfc2PI(sfNumber * cnst);
 void sfcE(sfNumber * cnst);
 void sfcI(sfNumber * cnst);
 void sfcRND(sfNumber * cnst);
+
 #ifdef __cplusplus
 }
 #endif

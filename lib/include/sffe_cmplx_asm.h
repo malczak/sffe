@@ -1,15 +1,11 @@
 /*/////////////////////////////////////////////////////////////////////////////////////
 // project : sFFe ( SegFault (or Segmentation Fault :) ) formula evalutaor )
 // author  : Mateusz Malczak ( mateusz@malczak.info )
-// wpage   : www.segfaultlabs.com/projects/sffe
-///////////////////////////////////////////////////////////////////////////////////////
-// special build for XaoS, for more info visit
-// http://www.segfaultlabs.com/projects/sfXaos
+// wpage   : 
 /////////////////////////////////////////////////////////////////////////////////////*/
 #ifndef SFFE_CMPLX_ASM_H
 #define SFFE_CMPLX_ASM_H
 
-#include <config.h>
 #ifdef SFFE_CMPLX_ASM
 
 #include "sffe.h"
@@ -126,11 +122,13 @@ void sfc2PI(sfNumber * cnst);
 void sfcE(sfNumber * cnst);
 void sfcI(sfNumber * cnst);
 void sfcRND(sfNumber * cnst);
+
 #ifdef __cplusplus
 }
 #endif
+
 /* all available function (function pointer, number of parameters, name )*/
-    extern const sffunction sfcmplxfunc[sffnctscount];
+extern const sffunction sfcmplxfunc[sffnctscount];
 /* all available buildin variables */
 extern const char sfcnames[sfvarscount][5];
 /* available variables function pointers */

@@ -20,14 +20,20 @@
 #define SFFE_H
 #include <stdlib.h>
 
+#ifdef SFFE_REAL
+ #define SFFE_DOUBLE 1
+#endif	
+
 /* --- */
 /*TODO long double needed*/
 #ifdef SFFE_CMPLX_ASM
+	#define SFFE_COMPLEX 1
 	typedef struct cmpx__ {
     	double r, i;
 	} cmplx;
 	#define sfNumber 		cmplx
 #elif SFFE_CMPLX_GSL
+	#define SFFE_COMPLEX 1
 	#include <gsl/gsl_complex.h>
 	typedef gsl_complex cmplx;
 	#define sfNumber 		gsl_complex

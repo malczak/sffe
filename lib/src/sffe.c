@@ -6,13 +6,18 @@
 
 #include <stdlib.h>
 #include <stdio.h>
- #ifdef linux
+
+ #ifdef __APPLE__
+	#include <ctype.h>
+ #elif __linux
 	#include <ctype.h>
  #endif
+ 
 #include <string.h>
 
 
 #include "sffe.h"
+
 #ifdef SFFE_CMPLX_ASM
  #include "sffe_cmplx_asm.h"
 #elif SFFE_CMPLX_GSL
@@ -592,7 +597,7 @@ int sffe_parse(sffe ** parser, char *expression)
 					arg->value = (sfNumber *) sffe_variable(p, ch1, (size_t) (ech - ch1));
 			
 					if (!arg->value) {
-		    			sfset(arg, 10.0);
+		    			//sfset(arg, 10.0); //?
 					    if (arg->value) {
 							if (!sffe_const(ch1, (size_t) (ech - ch1), arg->value)) {
 							    errset(UNKNOWNCONST);
@@ -616,7 +621,7 @@ int sffe_parse(sffe ** parser, char *expression)
 					
 					if (p->userfCount) {
 						/*is it user defined function */
-						*f = (sffunction *) (void *) userfunction(p, ch1, (size_t) (ec - ch1));
+						*f = (sffunction *) (void *) userfunction(p, ch1, (size_t) (ech - ch1));
 					}
 					
 					if (!*f) {
@@ -1128,5 +1133,3 @@ int sffe_parse(sffe ** parser, char *expression)
 
 #undef sfset
 #undef sfvar
-
-#endif
