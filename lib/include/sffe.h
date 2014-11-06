@@ -1,39 +1,38 @@
 /*/////////////////////////////////////////////////////////////////////////////////////
 // project : sFFe ( SegFault (or Segmentation Fault :) ) formula evalutaor )
 // author  : Mateusz Malczak ( mateusz@malczak.info )
-// wpage   : www.segfaultlabs.com/projects/sffe
+// wpage   :
 ///////////////////////////////////////////////////////////////////////////////////////
 // possible config definitions
 //   general
+//	SFFE_DOUBLE - real math parser
+//	SFFE_COMPLEX - complex math parser
 //	SFFE_DEVEL - print extra info to stdout
+//	SFFE_ONLYCOUNT - less memory consuming (alwas should be defined)
 //	SFFE_DLL - Windows DLL
-//   complex numbers
+//	
+//   complex numbers (for SFFE_COMPLEX)
 //	SFFE_CMPLX_GSL - uses GSL complex number routines
 //	SFFE_CMPLX_ASM - uses my asm complex unit (compile it with NASM)
-///////////////////////////////////////////////////////////////////////////////////////
-// special build for XaoS, for more info visit
-// http://www.segfaultlabs.com/projects/sfXaos
 /////////////////////////////////////////////////////////////////////////////////////*/
 
 #ifndef SFFE_H
 #define SFFE_H
-#include <config.h>
 #include <stdlib.h>
-
-/* dont udef next line. removing this definitions can lead to compile and/or runtime errors */
-#define SFFE_COMPLEX 1
 
 /* --- */
 /*TODO long double needed*/
 #ifdef SFFE_CMPLX_ASM
-typedef struct cmpx__ {
-    double r, i;
-} cmplx;
-#define sfNumber 		cmplx
+	typedef struct cmpx__ {
+    	double r, i;
+	} cmplx;
+	#define sfNumber 		cmplx
 #elif SFFE_CMPLX_GSL
-#include <gsl/gsl_complex.h>
-typedef gsl_complex cmplx;
-#define sfNumber 		gsl_complex
+	#include <gsl/gsl_complex.h>
+	typedef gsl_complex cmplx;
+	#define sfNumber 		gsl_complex
+#elif SFFE_DOUBLE
+	#define sfNumber		double	
 #endif
 
 /* basic sffe argument 'stack' */
@@ -58,9 +57,26 @@ typedef struct sffunction__ {
 
 /* basic sffe 'stack' operation ( function + result slot ) */
 typedef struct sfoperation__ {
-    sfarg *arg;
-    sffptr f;
+    sfarg*		arg;
+	#ifdef SFFE_ONLYCOUNT
+		sffptr 	f;
+	#else
+		sffunction*	f;
+	#endif
 } sfopr;
+
+typedef struct sftoken__ 
+{
+	char		*tkn;
+	char		code;
+	unsigned short	tlen;
+} sftoken;
+
+typedef struct sftokens__
+{
+  sftoken *tokens;
+  unsigned int count;
+} sftokens;
 
 /* SFFE main structure */
 typedef struct sffe__ {
@@ -68,14 +84,19 @@ typedef struct sffe__ {
     char *expression;		/* parsed expression (read-only) */
     char *errormsg;		/* parser errors (read-only) */
     sfNumber *result;		/* evaluation result (read-only) */
+    
 /* protected/private */
     unsigned int argCount;	/* number of argument in use */
     sfarg *args;
+    
     unsigned int oprCount;	/* number of operations in use */
     sfopr *oprs;
+    
     unsigned int varCount;	/* number of used variables */
     char *varChars;
+    
     sfNumber **varPtrs;
+    
     unsigned int userfCount;	/* number of user functions */
     sffunction *userf;
 /* not used 
@@ -131,9 +152,14 @@ sfNumber *sffe_setvar(sffe ** parser, sfNumber * vptrs, char vchars);
 #ifdef __cplusplus
 }
 #endif
+
 #ifdef SFFE_CMPLX_ASM
-#include "sffe_cmplx_asm.h"
+	#include "sffe_cmplx_asm.h"
 #elif SFFE_CMPLX_GSL
-#include "sffe_cmplx_gsl.h"
+	#include "sffe_cmplx_gsl.h"
+#elif SFFE_DOUBLE
+	#include "sffe_real.h"
 #endif
+
+
 #endif
