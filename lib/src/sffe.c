@@ -529,12 +529,17 @@ int sffe_parse(sffe ** parser, char *expression)
 
 		/*fix multiple arithm operators */
 		if (ch1 && strchr("+-/*^", (int) *ech) && strchr("+-/*^", (int) *ch1)) {
-	   		if (*ch1 == '-' && *ech == '-') *ch1 = '+';
-		    else if (*ch1 == '-' && *ech == '+') *ch1 = '-';
-	    	else if (*ch1 == '+' && *ech == '-') *ch1 = '-';
-	    	else if (*ch1 == *ech) *ch1 = *ech;
-	    	else if (*ech == '-') ch1 = ++ch2;
-	    	else if (*ch1 != *ech) {
+	   		if (*ch1 == '-' && *ech == '-') {
+	   			*ch1 = '+';
+	   		} else  if (*ch1 == '-' && *ech == '+') {
+	   			*ch1 = '-';
+	   		} else if (*ch1 == '+' && *ech == '-') { 
+		   		*ch1 = '-';
+	    	} else if (*ch1 == *ech) { 
+		    	*ch1 = *ech; 
+	    	} else if (*ech == '-') { 
+	    		ch1 = ++ch2;
+	    	}else if (*ch1 != *ech) {
 				err = OPERATOR;
 				break;
 	    	};
