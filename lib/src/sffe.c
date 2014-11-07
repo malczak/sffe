@@ -111,19 +111,30 @@ SFFE_EXPORT void sffe_clear(sffe ** parser)
     sffe *p = *parser;
     unsigned int i = 0, j;
     for (; i < p->argCount; i++) {
-	for (j = 0; j < p->varCount; j++)
-	    if (p->args[i].value == p->varPtrs[j])
-		j = p->varCount;
-	if (j == p->varCount)
-	    if (p->args[i].value)
-		free(p->args[i].value);
+        for (j = 0; j < p->varCount; j++) {
+            if (p->args[i].value == p->varPtrs[j]) {
+                j = p->varCount;
+            }
+        }
+        if (j == p->varCount) {
+            if (p->args[i].value) {
+                free(p->args[i].value);
+            }
+        }
     };
-    if (p->expression)
-	free(p->expression);
-    if (p->args)
-	free(p->args);
-    if (p->oprs)
-	free(p->oprs);
+    
+    if (p->expression) {
+        free(p->expression);
+    }
+    
+    if (p->args) {
+        free(p->args);
+    }
+    
+    if (p->oprs) {
+        free(p->oprs);
+    }
+    
     p->expression = NULL;
     p->args = NULL;
     p->oprs = NULL;
@@ -132,12 +143,19 @@ SFFE_EXPORT void sffe_clear(sffe ** parser)
 SFFE_EXPORT void sffe_free(sffe ** parser)
 {
     sffe_clear(parser);
-    if ((*parser)->userf)
-	free((*parser)->userf);
-    if ((*parser)->varChars)
-	free((*parser)->varChars);
-    if ((*parser)->varPtrs)
-	free((*parser)->varPtrs);
+    
+    if ((*parser)->userf) {
+        free((*parser)->userf);
+    }
+    
+    if ((*parser)->varChars) {
+        free((*parser)->varChars);
+    }
+    
+    if ((*parser)->varPtrs) {
+        free((*parser)->varPtrs);
+    }
+    
     free(*parser);
     parser = NULL;
 };
@@ -587,7 +605,7 @@ int sffe_parse(sffe ** parser, char *expression)
 					arg->value = (sfNumber *) sffe_variable(p, ch1, (size_t) (ech - ch1));
 			
 					if (!arg->value) {
-		    			//sfset(arg, 10.0); //?
+		    			sfset(arg, 10.0); //? temporary const value
 					    if (arg->value) {
 							if (!sffe_const(ch1, (size_t) (ech - ch1), arg->value)) {
 							    errset(UNKNOWNCONST);
