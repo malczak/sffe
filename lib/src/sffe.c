@@ -15,6 +15,9 @@
  
 #include <string.h>
 
+#ifdef SFFE_DEVEL
+	#include <time.h>
+#endif
 
 #include "sffe.h"
 
@@ -138,20 +141,6 @@ SFFE_EXPORT void sffe_free(sffe ** parser)
     free(*parser);
     parser = NULL;
 };
-
-/* not really used, marked to remove 
-void sffe_eval2(sffe *const parser)
-{
- register sfopr* optro;
- register sfopr* optr = parser->oprs;
- register sfopr* optrl = parser->oprs+parser->oprCount;
- optro = optr;
-  for ( optr=optr; optr!=optrl; optr+=1, optro+=1 )
-  {
-		optro->arg->parg = optro->arg-1;
-		optr->arg->parg = optr->f( optr->arg )->parg;
-  };
-};*/
 
 SFFE_EXPORT sfNumber sffe_eval(sffe * const parser)
 {
@@ -473,6 +462,7 @@ int sffe_parse(sffe ** parser, char *expression)
  )
 
 #ifdef SFFE_DEVEL
+	clock_t begin = clock();
     printf("parse - BEGIN\n");
 #endif
 /**************** CODE */
@@ -498,7 +488,7 @@ int sffe_parse(sffe ** parser, char *expression)
     printf
 	("\n|-----------------------------------------\n+ > %s[%d] - parsing\n|-----------------------------------------\n",
 	 __FILE__, __LINE__);
-    printf("| input (dl.=%d) :|%s|\n", strlen(p->expression),
+    printf("| input (len.=%d): |%s|\n", strlen(p->expression),
 	   p->expression);
 #endif
 
@@ -568,7 +558,7 @@ int sffe_parse(sffe ** parser, char *expression)
 	}
 
 #ifdef SFFE_DEVEL
-    printf("| check (dl.=%d) :|%s|\n", strlen(p->expression),
+    printf("| check (len.=%d): |%s|\n", strlen(p->expression),
 	   p->expression);
 #endif
 
@@ -746,7 +736,7 @@ int sffe_parse(sffe ** parser, char *expression)
 
 #ifdef SFFE_DEVEL
     printf
-	("| compiled expr. :|%s|\n| operacje: %d\n| stale,zmienne: %d\n| stack not.: ",
+	("| compiled expr.: |%s|\n| operations: %d\n| numbers,vars: %d\n| stack not.: ",
 	 expcode, p->oprCount, p->argCount);
 #endif
 
@@ -984,7 +974,7 @@ int sffe_parse(sffe ** parser, char *expression)
 			}
 
 	#ifdef SFFE_DEVEL
-			printf("\n| numbers :");
+			printf("\n| numbers: ");
 			for (ui1 = 0; ui1 < p->argCount; ui1 += 1) {
 				if ((p->args + ui1)->value) 
 				{
@@ -1007,6 +997,14 @@ int sffe_parse(sffe ** parser, char *expression)
 			for (ui1 = 0; ui1 < p->oprCount; ui1 += 1) {
 				printf(" 0x%.6X", (int) p->oprs[ui1].f);
 			}
+			
+			double time_spent = (double)(clock() - begin) / CLOCKS_PER_SEC;
+			printf("\n| compiled in  %f s", time_spent);			
+			
+			printf
+	("\n|-----------------------------------------\n+ < %s[%d] - parsing\n|-----------------------------------------\n",
+	 __FILE__, __LINE__);
+
 	#endif
 		} else {		/* prevent memory leaks */
 

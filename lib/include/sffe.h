@@ -105,10 +105,6 @@ typedef struct sffe__ {
     
     unsigned int userfCount;	/* number of user functions */
     sffunction *userf;
-/* not used 
-  unsigned int	stCount;	    
-  sfNumber*		statics;
-*/
 } sffe;
 
 #define SFFE sffe

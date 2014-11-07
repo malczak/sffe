@@ -46,12 +46,12 @@ sfarg *sffloor( sfarg * const p ); /* floor */
 sfarg *sfabs( sfarg * const p ); /* abs */
 
 //const eval
-sfarg *sfcPI( sfNumber *cnst );
-sfarg *sfcPI2( sfNumber *cnst );
-sfarg *sfc2PI( sfNumber *cnst );
-sfarg *sfcE( sfNumber *cnst );
-sfarg *sfcEPS( sfNumber *cnst );
-sfarg *sfcRND( sfNumber *cnst );
+void sfcPI( sfNumber *cnst );
+void sfcPI2( sfNumber *cnst );
+void sfc2PI( sfNumber *cnst );
+void sfcE( sfNumber *cnst );
+void sfcEPS( sfNumber *cnst );
+void sfcRND( sfNumber *cnst );
 
  #ifdef __cplusplus
   }

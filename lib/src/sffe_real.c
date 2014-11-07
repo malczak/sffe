@@ -45,10 +45,11 @@ const sffunction sfcmplxfunc[sffnctscount] =  {
 		{sfabs,1,"ABS\0"}
 };
 
-static char sfcnames[sfvarscount][5] = 
-	{"PI\0","PI_2\0","PI2\0","E\0","EPS\0","RND\0"};
-static cfptr sfcvals[sfvarscount] = 
-	{ sfcPI, sfcPI2, sfc2PI, sfcE, sfcEPS, sfcRND };
+const char sfcnames[sfvarscount][5] = 
+{"PI\0","PI_2\0","PI2\0","E\0","EPS\0","RND\0"};
+
+const cfptr sfcvals[sfvarscount] = 
+{ sfcPI, sfcPI2, sfc2PI, sfcE, sfcEPS, sfcRND };
 
 
 sfarg *sfadd( sfarg * const p ) /* + */
@@ -216,32 +217,32 @@ sfarg *sfabs( sfarg * const p ) /* abs */
 };
 
 //const eval
-sfarg *sfcPI( sfNumber *cnst ) 
+void sfcPI( sfNumber *cnst ) 
 { 
 	*cnst=4*atan(1); 
 };
 
-sfarg *sfcPI2( sfNumber *cnst )
+void sfcPI2( sfNumber *cnst )
 { 
 	*cnst=2*atan(1); 
 };
 
-sfarg *sfc2PI( sfNumber *cnst ) 
+void sfc2PI( sfNumber *cnst ) 
 { 
 	*cnst=8*atan(1); 
 };
 
-sfarg *sfcE( sfNumber *cnst ) 
+void sfcE( sfNumber *cnst ) 
 {
 	*cnst=exp(1); 
 };
 
-sfarg *sfcEPS( sfNumber *cnst ) 
+void sfcEPS( sfNumber *cnst ) 
 { 
 	*cnst=sfEPSILON; 
 };
 
-sfarg *sfcRND( sfNumber *cnst ) 
+void sfcRND( sfNumber *cnst ) 
 { 
 	*cnst=(double)rand()/(double)RAND_MAX; 
 };
