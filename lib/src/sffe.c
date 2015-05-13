@@ -738,11 +738,10 @@ int sffe_parse(sffe ** parser, char *expression)
 					} else {
 						fnctbl[p->oprCount - 1] = (sffunction *) ch1;
 					}
-				
-					ch1 = (char *) (int) opr;	/* ]:-> */
+                    // inject multiplication
+                    unsigned char tmp = opr;
 					code('*');
-					opr = (char) (int) ch1;
-					ch1= NULL;
+					opr = tmp;
 				};
 			}
 		}
