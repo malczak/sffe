@@ -40,45 +40,68 @@
 #ifdef SFFE_COMPLEX
 	#define sfset(arg,val) \
 		(arg)->value = (sfNumber*)malloc(sizeof(sfNumber));\
-			if ( (arg)->value )  cmplxset( *((arg)->value), (val),0 ) ;
+        if ( (arg)->value ) \
+        {\
+            (arg)->type = sfvar_type_managed_ptr;\
+            cmplxset( *((arg)->value), (val),0 );\
+        }
 #else
 	#define sfset(arg,val) \
 		(arg)->value = (sfNumber*)malloc(sizeof(sfNumber));\
-			if ( (arg)->value ) *((arg)->value) = (val);
+        if ( (arg)->value ) \
+        {\
+            (arg)->type = sfvar_type_managed_ptr;\
+            *((arg)->value) = (val);\
+        }
 #endif
 
-
-#define sfvar(p,parser,idx) (p)->value = (sfNumber*)((parser)->vars+idx)
+void sf_strdup(char **out, const char * in)
+{
+    size_t name_len = strlen(in);
+    char *dup = malloc(name_len + 1);
+    if(dup)
+    {
+        for (size_t i = 0; i < name_len; i += 1)
+        {
+            dup[i] = (char) toupper((int) in[i]);
+        }
+        dup[name_len] = '\0';
+    }
+    *out = dup;
+}
 
 /************************* custom function */
-/* all used in this section variables are defined depanding on complex number realization */
+/* all used in this section variables are defined depanding on complex number implementation */
 sffunction *sffe_function(char *fn, size_t len)
 {
     unsigned char idx;
-    for (idx = 5; idx < sffnctscount; idx += 1)	/* sffnctscount - defined in sffe_cmplx_* file */
-	if (!strncmp(fn, sfcmplxfunc[idx].name, len))
-	    return (sffunction *) (sfcmplxfunc + idx);
+    /* sffnctscount - defined in sffe_cmplx_* file */
+    for (idx = 5; idx < sffnctscount; idx += 1)	{
+        if (!strncmp(fn, sfcmplxfunc[idx].name, len)){
+            return (sffunction *) (sfcmplxfunc + idx);
+        }
+    }
     return NULL;
 };
 
 sffunction *sffe_operator(char op)
 {
     switch (op) {
-    case '^':
-	return (sffunction *) sfcmplxfunc;
-	break;
-    case '+':
-	return (sffunction *) sfcmplxfunc + 1;
-	break;
-    case '-':
-	return (sffunction *) sfcmplxfunc + 2;
-	break;
-    case '*':
-	return (sffunction *) sfcmplxfunc + 3;
-	break;
-    case '/':
-	return (sffunction *) sfcmplxfunc + 4;
-	break;
+        case '^':
+            return (sffunction *) sfcmplxfunc;
+            break;
+        case '+':
+            return (sffunction *) sfcmplxfunc + 1;
+            break;
+        case '-':
+            return (sffunction *) sfcmplxfunc + 2;
+            break;
+        case '*':
+            return (sffunction *) sfcmplxfunc + 3;
+            break;
+        case '/':
+            return (sffunction *) sfcmplxfunc + 4;
+            break;
     };
     return NULL;
 };
@@ -87,10 +110,13 @@ void *sffe_const(char *fn, size_t len, void *ptr)
 {
     unsigned char idx = 3;
     for (idx = 0; idx < sfvarscount; idx += 1)
-	if (!strncmp(fn, sfcnames[idx], len)) {
-	    sfcvals[idx] ((sfNumber *) ptr);
-	    return ptr;
-	};
+    {
+        if (!strncmp(fn, sfcnames[idx], len))
+        {
+            sfcvals[idx] ((sfNumber *) ptr);
+            return ptr;
+        };
+    }
     return NULL;
 };
 
@@ -101,7 +127,10 @@ SFFE_EXPORT sffe *sffe_alloc(void)
 {
     sffe *rp = (sffe *) malloc(sizeof(sffe));
     if (!rp)
-	return NULL;
+    {
+        return NULL;
+    }
+    
     memset(rp, 0, sizeof(sffe));
     return rp;
 };
@@ -109,29 +138,27 @@ SFFE_EXPORT sffe *sffe_alloc(void)
 SFFE_EXPORT void sffe_clear(sffe ** parser)
 {
     sffe *p = *parser;
-    unsigned int i = 0, j;
-    for (; i < p->argCount; i++) {
-        for (j = 0; j < p->varCount; j++) {
-            if (p->args[i].value == p->varPtrs[j]) {
-                j = p->varCount;
-            }
+    unsigned int i = 0;
+    for (; i < p->argCount; i++)
+    {
+        if(p->args[i].type == sfvar_type_managed_ptr)
+        {
+            free(p->args[i].value);
         }
-        if (j == p->varCount) {
-            if (p->args[i].value) {
-                free(p->args[i].value);
-            }
-        }
-    };
-    
-    if (p->expression) {
-        free(p->expression);
     }
     
-    if (p->args) {
+    if (p->args)
+    {
         free(p->args);
     }
     
-    if (p->oprs) {
+    if (p->expression)
+    {
+        free(p->expression);
+    }
+    
+    if (p->oprs)
+    {
         free(p->oprs);
     }
     
@@ -142,18 +169,26 @@ SFFE_EXPORT void sffe_clear(sffe ** parser)
 
 SFFE_EXPORT void sffe_free(sffe ** parser)
 {
+    sffe *p = *parser;
+    
     sffe_clear(parser);
     
-    if ((*parser)->userf) {
-        free((*parser)->userf);
+    if (p->userf) {
+        free(p->userf);
     }
     
-    if ((*parser)->varChars) {
-        free((*parser)->varChars);
-    }
-    
-    if ((*parser)->varPtrs) {
-        free((*parser)->varPtrs);
+    if (p->varCount)
+    {
+        unsigned int i = 0;
+        for (; i < p->varCount; i++)
+        {
+            if(p->variables[i].type == sfvar_type_managed_ptr)
+            {
+                free(p->variables[i].value);
+            }
+        };
+        
+        free(p->variables);
     }
     
     free(*parser);
@@ -166,7 +201,8 @@ SFFE_EXPORT sfNumber sffe_eval(sffe * const parser)
     register sfopr *optr = parser->oprs;
     register sfopr *optrl = parser->oprs + parser->oprCount;
     optro = optr;
-    for (optr = optr; optr != optrl; optr += 1, optro += 1) {
+    for (optr = optr; optr != optrl; optr += 1, optro += 1)
+    {
 		optro->arg->parg = optro->arg - 1;
 		#ifdef SFFE_ONLYCOUNT
 			optr->arg->parg = optr->f( optr->arg )->parg;
@@ -177,129 +213,132 @@ SFFE_EXPORT sfNumber sffe_eval(sffe * const parser)
     return *(parser->result);
 };
 
-SFFE_EXPORT void *sffe_regvar(sffe ** parser, sfNumber * vptrs, char vchars)
+SFFE_EXPORT sfvariable* sffe_var(sffe *const parser, const char* name)
 {
-    unsigned int i = (*parser)->varCount;
-    (*parser)->varCount += 1;
-    (*parser)->varPtrs =
-	(sfNumber **) realloc((*parser)->varPtrs,
-			      (*parser)->varCount * sizeof(sfNumber *));
-
-    if (!(*parser)->varPtrs)
- 		return NULL;
- 		
-    (*parser)->varChars =
-	(char *) realloc((*parser)->varChars, (*parser)->varCount);
-
-    if (!(*parser)->varChars)
-		return NULL;
-		
-    (*parser)->varPtrs[i] = vptrs;
-    (*parser)->varChars[i] = toupper(vchars);
-    
-    return (void *) ((*parser)->varPtrs + i);
-};
-
-SFFE_EXPORT void *sffe_regvars(sffe ** parser, unsigned int cN, sfNumber ** vptrs,
-		   char *vchars)
-{
-    unsigned int i = (*parser)->varCount;
-    (*parser)->varCount += cN;
-    (*parser)->varPtrs =
-	(sfNumber **) realloc((*parser)->varPtrs,
-			      (*parser)->varCount * sizeof(sfNumber *));
-
-    if (!(*parser)->varPtrs)
-		return NULL;
-		
-    (*parser)->varChars =
-	(char *) realloc((*parser)->varChars, (*parser)->varCount);
-
-    if (!(*parser)->varChars)
-		return NULL;
-		
-    for (cN = 0; i < (*parser)->varCount; i += 1, cN += 1) {
-		(*parser)->varPtrs[i] = vptrs[cN];
-		(*parser)->varChars[i] = toupper(vchars[cN]);
-    };
-    
-    return (void *) ((*parser)->varPtrs + i);
-};
-
-SFFE_EXPORT sfNumber *sffe_varptr(sffe * const parser, char vchar)
-{
-    unsigned int i = 0;
-    while (i < parser->varCount) {
-		if (parser->varChars[i] == vchar)
-		    return parser->varPtrs[i];
-		i += 1;
-    };
-    return NULL;
-};
-
-SFFE_EXPORT sfNumber *sffe_setvar(sffe ** parser, sfNumber * vptrs, char vchars)
-{
-    unsigned int i = 0;
-    while (i < (*parser)->varCount) 
+    if(parser->varCount)
     {
-		if ((*parser)->varChars[i] == vchars) 
-		{
-	    	sfNumber *ret = (*parser)->varPtrs[i];
-	    	(*parser)->varPtrs[i] = vptrs;
-		    return ret;
-		};
-		
-		i += 1;
-    };
+        sfvariable *var = parser->variables;
+        sfvariable *lvar = parser->variables + parser->varCount;
+        while (var < lvar)
+        {
+            if(!strcasecmp(var->name, name))
+            {
+                return var;
+            }
+            var += 1;
+        }
+    }
+    
     return NULL;
+}
+
+SFFE_EXPORT sfNumber* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* name)
+{
+    sffe *parser_ = *parser;
+    sfvariable *var = sffe_var(parser_, name);
+    if(var)
+    {
+        return var->value;
+    }
+    
+    int vars_cnt = parser_->varCount + 1;
+    parser_->variables = realloc(parser_->variables, vars_cnt * sizeof(sfvariable));
+    if(!parser_->variables)
+    {
+        return NULL;
+    }
+    
+    var = parser_->variables + parser_->varCount;
+    if(vptrs == NULL)
+    {
+        vptrs = (sfNumber*) malloc(sizeof(sfNumber));
+        memset(vptrs, 0, sizeof(sfNumber));
+        var->type = sfvar_type_managed_ptr;
+    } else {
+        var->type = sfvar_type_ptr;
+    }
+    var->value = vptrs;
+    sf_strdup(&var->name, name);
+
+    parser_->varCount += 1;
+    return var->value;
 };
 
-SFFE_EXPORT void *sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt,
-		   sffptr funptr)
+SFFE_EXPORT void sffe_regvars(sffe ** parser, unsigned int cN, sfNumber ** vptrs, char* const* names)
 {
+    while(cN>0)
+    {
+        cN -= 1;
+        sffe_regvar(parser, (vptrs ? vptrs[cN] : NULL), names[cN]);
+    }
+};
+
+SFFE_EXPORT sfNumber* sffe_setvar(sffe ** parser, sfNumber vptrs, const char* name)
+{
+    sfNumber *value;
+    sffe *parser_ = *parser;
+    sfvariable *var = sffe_var(parser_, name);
+    if(!var)
+    {
+        value = sffe_regvar(parser, NULL, name);
+    } else {
+        value = var->value;
+    }
+    
+    memcpy(value, &vptrs, sizeof(sfNumber));
+    return value;
+};
+
+SFFE_EXPORT void *sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt, sffptr funptr)
+{
+    sffe *parser_ = *parser;
     sffunction *sff;
     unsigned short i;
-    (*parser)->userf =
-	(sffunction *) realloc((*parser)->userf,
-			       ((*parser)->userfCount +
-				1) * sizeof(sffunction));
-				
-
-    if (!(*parser)->userf)
-		return NULL;
+    
+    parser_->userf = (sffunction *) realloc(parser_->userf, (parser_->userfCount + 1) * sizeof(sffunction));
+    if (!parser_->userf)
+    {
+        return NULL;
+    }
 		
-    sff = (*parser)->userf + (*parser)->userfCount;    
+    sff = parser_->userf + parser_->userfCount;
+    
+//    sf_strdup(&var->name, name);
+
     strcpy(sff->name, vname);
     
-    for (i = 0; i < strlen(vname); i += 1) {
+    for (i = 0; i < strlen(vname); i += 1)
+    {
 		sff->name[i] = (char) toupper((int) vname[i]);
 	}
 	
     sff->parcnt = parcnt;
     sff->fptr = funptr;
-    (*parser)->userfCount += 1;
+    
+    parser_->userfCount += 1;
     return (void *) sff;
 };
 
-void *sffe_variable(sffe * const p, char *fname, size_t len)
+sfNumber* sffe_variable(sffe * const p, char *fname, size_t len)
 {
-    unsigned int idx = 0;
-    /*FIXME vars names with length > 1 should be allowed */
-    if (len == 1) {    
-		for (; idx < p->varCount; idx += 1) {
-			if (p->varChars[idx] == *fname) {
-				return (void *) p->varPtrs[idx];
-			}
-		}
-	}
+    char fn[len+1];
+    fn[len] = '\0';
+    memcpy(fn, fname, len);
+    sfvariable *var = sffe_var(p, fn);
+    if(var)
+    {
+        return var->value;
+    }
     return NULL;
 };
 
 sffunction *userfunction(const sffe * const p, char *fname, size_t len)
 {
     unsigned char idx;
-    for (idx = 0; idx < p->userfCount; idx += 1) {
-		if (!strncmp(fname, p->userf[idx].name, len)) {
+    for (idx = 0; idx < p->userfCount; idx += 1)
+    {
+		if (!strncmp(fname, p->userf[idx].name, len))
+        {
 		    return (sffunction *) (p->userf + idx);
 		}
 	}
@@ -400,11 +439,15 @@ int sffe_parse(sffe ** parser, char *expression)
 {
 /**************var area */
     struct opstack__ {
-		#ifdef SFFE_DEVEL
+#ifdef SFFE_DEVEL
 		char c;			/* used in debug build to store operator character */
-		#endif
+#endif
 		unsigned char t;	/* store priority of the operator 'f' */
-		sffptr f;
+#ifdef SFFE_ONLYCOUNT
+        sffptr 	f;
+#else
+        sffunction*	f;
+#endif
     };
     
     struct stack__ {
@@ -413,8 +456,8 @@ int sffe_parse(sffe ** parser, char *expression)
 		struct stack__ *prev;
     } *stmp, *stack;
     
-    sffunction **fnctbl;
-    sffunction **f;
+    sffunction **fnctbl; /* hold all functions used in expression in left - to - right order */
+    sffunction **f; /* currently expected function from 'fnctbl' */
     sfarg *arg, *argcnt;
     char *ech;
     char *ch1, *ch2;
@@ -423,6 +466,7 @@ int sffe_parse(sffe ** parser, char *expression)
     unsigned char opr;
     char err;
     sffe *p;
+    
 /**************used defines */
 #define MEMERROR	  1
 #define UNBALANCEDBRACKES 2
@@ -433,56 +477,51 @@ int sffe_parse(sffe ** parser, char *expression)
 #define STACKERROR	  7
 #define PARCNTERROR	  8
 #define NO_FUNCTIONS	  9
+
 #define code(chr) \
 			expcode = (char*)realloc(expcode,ui1+2);\
 			expcode[ui1++] = chr;\
 			ch2 = expcode+ui1-1;\
 			opr = chr;\
 			expcode[ui1] = '\0';
+
 #define errset(errno) {\
 			err = errno;\
 			break;}
-#define insertfnc(fnc) \
+    
+#define insertfnc() \
 			for ( argcnt=p->args+p->argCount-1; argcnt>arg; argcnt-=1 )\
-				argcnt->value = (argcnt-1)->value;\
+            {\
+				*argcnt = *(argcnt-1);\
+            };\
 			sfset(argcnt,-1.0);
 
-#ifdef SFFE_DEVEL
-#define sfpopstack(a)\
+#define sfpopstack()\
 			{\
 				stack->size-=1;\
-				insertfnc(NULL);\
-				printf("%c",stack->stck[stack->size].c);\
+				insertfnc();\
 				p->oprs[ui1].arg = (sfarg*)arg;\
 				p->oprs[ui1].f = stack->stck[stack->size].f;\
 				ui1 += 1;\
 				arg += 1;\
 			};
-#else
-#define sfpopstack(a)\
-			{\
-				stack->size-=1;\
-				insertfnc(NULL);\
-				p->oprs[ui1].arg = (sfarg*)arg;\
-				p->oprs[ui1].f = stack->stck[stack->size].f;\
-				ui1 += 1;\
-				arg += 1;\
-			};
-#endif
 
 #define priority(chr)\
- (*chr=='f')?0x60:(\
-	(*chr=='^')?0x40:(\
-		((*chr=='/')||(*chr=='*'))?0x20:(\
-			((*chr=='+')||(*chr=='-'))?0x00:0x80\
-		)\
-	)\
- )
+            (*chr=='f')?0x60:(\
+                (*chr=='^')?0x40:(\
+                    ((*chr=='/')||(*chr=='*'))?0x20:(\
+                        ((*chr=='+')||(*chr=='-'))?0x00:0x80\
+                    )\
+                )\
+            )
+    
+#define max(a,b) ((a>b) ? a : b)
 
 #ifdef SFFE_DEVEL
 	clock_t begin = clock();
     printf("parse - BEGIN\n");
 #endif
+    
 /**************** CODE */
     fnctbl = NULL;
     ech = expression;
@@ -492,7 +531,8 @@ int sffe_parse(sffe ** parser, char *expression)
     p = *parser;
     
     /* clear all internal structures */
-    if (p->expression) {
+    if (p->expression)
+    {
 		sffe_clear(parser);
 	}
 
@@ -520,7 +560,7 @@ int sffe_parse(sffe ** parser, char *expression)
 		ech += 1;		
 	}
 	
-	/*handle brackets and chaange ','->'.' */
+	/*handle brackets and change ','->'.', '['->'(', ']'->')' */
     while (*ech) {
 		switch (*ech) {
 			case '[':
@@ -541,7 +581,8 @@ int sffe_parse(sffe ** parser, char *expression)
 		*ch2 = (char) toupper((int) *ech);
 
 		/*fix multiple arithm operators */
-		if (ch1 && strchr("+-/*^", (int) *ech) && strchr("+-/*^", (int) *ch1)) {
+		if (ch1 && strchr("+-/*^", (int) *ech) && strchr("+-/*^", (int) *ch1))
+        {
 			if (*ch1 == '-' && *ech == '-') {
 				*ch1 = '+';
 			} else if (*ch1 == '-' && *ech == '+') {
@@ -598,47 +639,58 @@ int sffe_parse(sffe ** parser, char *expression)
 		    {
 			    case 1:		/* const or variable */
 					p->args = (sfarg *) realloc(p->args, (++p->argCount) * sizeof(sfarg));
-					if (!p->args){
+					if (!p->args)
+                    {
 					    errset(MEMERROR);
 					}
+                    
 					arg = p->args + p->argCount - 1;
+                    arg->type = sfvar_type_ptr;
 					arg->value = (sfNumber *) sffe_variable(p, ch1, (size_t) (ech - ch1));
 			
-					if (!arg->value) {
+					if (!arg->value)
+                    {
 		    			sfset(arg, 10.0); //? temporary const value
-					    if (arg->value) {
-							if (!sffe_const(ch1, (size_t) (ech - ch1), arg->value)) {
+					    if (arg->value)
+                        {
+							if (!sffe_const(ch1, (size_t) (ech - ch1), arg->value))
+                            {
 							    errset(UNKNOWNCONST);
 							}
 					    } else {
 							errset(MEMERROR);
 						}
-					};
+                    }
+                    
 					opr = 'n';
 				break;
 			
 			    case 2:		/* function */
 					fnctbl = (sffunction **) realloc(fnctbl, (p->oprCount + 1) * sizeof(sffunction *));
 					
-					if (!fnctbl) {
+					if (!fnctbl)
+                    {
 					    errset(MEMERROR);
 					}
 					
 					f = fnctbl + (p->oprCount++);
 					*f = NULL;
 					
-					if (p->userfCount) {
+					if (p->userfCount)
+                    {
 						/*is it user defined function */
 						*f = (sffunction *) (void *) userfunction(p, ch1, (size_t) (ech - ch1));
 					}
 					
-					if (!*f) {
+					if (!*f)
+                    {
 						/*if not, is it build in function */
 						*f = (sffunction *) (void *) sffe_function(ch1, (size_t)(ech - ch1));
 					}
 					
 					/* if not -> ERROR */
-					if (!*f) {
+					if (!*f)
+                    {
 						errset(INVALIDFUNCTION);
 					}
 					
@@ -652,24 +704,27 @@ int sffe_parse(sffe ** parser, char *expression)
 		} else			
 		/* numbers (this part can be optimized) */
 		/* is it a real number */ 
-		if (isdigit(*ech) || (strchr("/*^(", (int) opr) && strchr("+-", *ech))) {
+		if (isdigit(*ech) || (strchr("/*^(", (int) opr) && strchr("+-", *ech)))
+        {
 		    ch1 = ech;		/* st = 1;  */
 			
-			if (sffe_donum(&ech) > 1) {
+			if (sffe_donum(&ech) > 1)
+            {
 				errset(INAVLIDNUMBER);
 			}
 			
 			/*epx */
 			p->args = (sfarg *) realloc(p->args, (++p->argCount) * sizeof(sfarg));
 	
-			if (!p->args) {
+			if (!p->args)
+            {
 				errset(MEMERROR);
 			}
 			
 			arg = p->args + p->argCount - 1;
-
 			/* '-n'/'+n', which was parsed as 0*n */
-			if ((ech - ch1) == 1 && (*ch1 == '-')) {
+			if ((ech - ch1) == 1 && (*ch1 == '-'))
+            {
 				sfset(arg, -1)
 			} else {
 				sfset(arg, atof(ch1)); 
@@ -680,18 +735,21 @@ int sffe_parse(sffe ** parser, char *expression)
 		} else
 		    /* if not, it can be complex number */
 	#ifdef SFFE_COMPLEX
-		if (*ech == '{') {
+		if (*ech == '{')
+        {
 			ech += 1;
 			p->args = (sfarg *) realloc(p->args, (++p->argCount) * sizeof(sfarg));
 	
-			if (!p->args) {
+			if (!p->args)
+            {
 				errset(MEMERROR);
 			}
 			
 			arg = p->args + p->argCount - 1;
 			sfset(arg, 0);
 			
-			if (sffe_docmplx(&ech, &arg)) {
+			if (sffe_docmplx(&ech, &arg))
+            {
 				errset(INAVLIDNUMBER);
 			}
 			
@@ -700,16 +758,18 @@ int sffe_parse(sffe ** parser, char *expression)
 	#endif
 	    /* if not, we have operator */
 		{
-	    	ch1 = (char *) sffe_operator(*ech);
+	    	sffunction *function = sffe_operator(*ech);
 
-		    if (ch1) {
+		    if (function)
+            {
 				fnctbl = (sffunction **) realloc(fnctbl, (++p->oprCount) * sizeof(sffunction *));
 				
-				if (!fnctbl) {
+				if (!fnctbl)
+                {
 				    errset(MEMERROR);
 		    	}
 		    	
-				fnctbl[p->oprCount - 1] = (sffunction *) ch1;
+				fnctbl[p->oprCount - 1] = function;
 			};
 	
 		    ch1 = ech;
@@ -718,26 +778,30 @@ int sffe_parse(sffe ** parser, char *expression)
 		};
 
 
-		/* check if multiply sign skipped, nf, n(, )( */
+		/* no error and already has any opcodes - check for skipped multiplication. Handle nf, n(, )(, )f, )n, fn */
 		if (!err && ui1 > 0)
 		{
 			if (opr == 'f' || opr == 'n' || opr == '(') 
 			{
 				if (*ch2 == 'n' || *ch2 == ')') 
 				{
-					ch1 = (char *) sffe_operator('*');
+					sffunction *oprptr = sffe_operator('*');
 					fnctbl = (sffunction **) realloc(fnctbl, (++p->oprCount) * sizeof(sffunction *));
 				
-					if (!fnctbl) {
+					if (!fnctbl)
+                    {
 						errset(MEMERROR);
 					}
 				
-					if (opr == 'f') {
+                    /* if last token was function inject multiplication before it */
+					if (opr == 'f')
+                    {
 						fnctbl[p->oprCount - 1] = fnctbl[p->oprCount - 2];
-						fnctbl[p->oprCount - 2] = (sffunction *) ch1;
+						fnctbl[p->oprCount - 2] = (sffunction *) oprptr;
 					} else {
-						fnctbl[p->oprCount - 1] = (sffunction *) ch1;
+						fnctbl[p->oprCount - 1] = (sffunction *) oprptr;
 					}
+                    
                     // inject multiplication
                     unsigned char tmp = opr;
 					code('*');
@@ -768,6 +832,7 @@ int sffe_parse(sffe ** parser, char *expression)
 /* lots of memory operations are done here but no memory leaks should occur */
     if (!err) 
 	{
+        /* add value slots for uses operators/functions */
 		ui1 = p->argCount + p->oprCount;
 		p->args = (sfarg *) realloc(p->args, ui1 * sizeof(sfarg));
 		memset(p->args + p->argCount, 0, p->oprCount * sizeof(sfarg));
@@ -795,26 +860,32 @@ int sffe_parse(sffe ** parser, char *expression)
 				case '-':
 				case '*':
 				case '/':
-				case '^':
-					if (ch1) {
+                case '^':{
+					if (ch1)
+                    {
 						#ifdef SFFE_DEVEL
 							printf("%c", *ch1);
 						#endif
 						arg += 1;
 					};
 
-					ch1 = (char *) (int) (priority(ech));
+                    
+					unsigned char prio = (priority(ech));
 					/* there is an operator on stack */ //!!! DIFF !!!
-					if (stack->size) {
-				
-						/* double casting to get rid of 'cast from pointer to integer of different size' warning 
-						 * remove all operators with higher, or equal priority 
-						 **/
-						while ((unsigned char) (int) ch1 <= stack->stck[stack->size - 1].t) {
-							sfpopstack(NULL);
-							stack->stck = (struct opstack__ *) realloc(stack->stck, sizeof(struct opstack__));	/* is this reallocation really needed ?!? */
+					if (stack->size)
+                    {
+                        /* remove all operators with higher, or equal priority */
+						while (prio <= stack->stck[stack->size - 1].t)
+                        {
+                            sfpopstack();
+#ifdef SFFE_DEVEL
+                            printf("%c",stack->stck[stack->size].c);
+#endif
+
+                            stack->stck = (struct opstack__ *) realloc(stack->stck, sizeof(struct opstack__));	/* is this reallocation really needed ?!? */
 						
-							if (stack->size == 0) {
+							if (stack->size == 0)
+                            {
 								break;
 							}
 						};
@@ -826,43 +897,45 @@ int sffe_parse(sffe ** parser, char *expression)
 						stack->stck[stack->size].c = *ech;
 					#endif
 				
+                    sffunction *function =  *f;
 					/* get function pointer */
 					#ifdef SFFE_ONLYCOUNT
-						stack->stck[stack->size].f = ((sffunction*)(*f))->fptr;
+						stack->stck[stack->size].f = function->fptr;
 					#else
-						stack->stck[stack->size].f = *f;
+						stack->stck[stack->size].f = function;
 					#endif
 
-					stack->stck[stack->size].t = (unsigned char) (int) ch1;	/* store operator prority */
+                    stack->stck[stack->size].t = prio; /* store operator prority */
 					stack->size += 1;
 				
 					f += 1;
 					ch1 = NULL;
-				break;
+                }break;
 				/* F  */
-				case 'f':
+                case 'f':{
 					stack->stck = (struct opstack__ *) realloc(stack->stck, (stack->size + 1) * sizeof(struct opstack__));
 			
 					#ifdef SFFE_DEVEL
 						stack->stck[stack->size].c = 'f';
 					#endif
 
-					/* mark operator as a function, and store number of parameters (0 - unlimited) */
+					/* mark operator as a function, and store number of available parameters (0 - unlimited) */
 					stack->stck[stack->size].t = 0x60 | (((sffunction *) (*f))->parcnt & 0x1F);
 
+                    sffunction *function =  *f;
 					/* get function pointer */
 					#ifdef SFFE_ONLYCOUNT
-						stack->stck[stack->size].f = ((sffunction*)(*f))->fptr;
+						stack->stck[stack->size].f = function->fptr;
 					#else
-						stack->stck[stack->size].f = *f;
+						stack->stck[stack->size].f = function;
 					#endif
 
 					stack->size += 1;
 					f += 1;
 					ch1 = NULL;
-				break;	// skip to ( ???
+                }break;	// skip to ( ???
 				/* (  */
-				case '(':
+                case '(':{
 					/* store current stack */
 					stmp = (struct stack__ *) malloc(sizeof(struct stack__));
 					stmp->prev = stack;
@@ -875,11 +948,12 @@ int sffe_parse(sffe ** parser, char *expression)
 					#endif
 					
 					opr = 0;
-				break;
+                }break;
 				/*  ; */
-				case ';':
+                case ';':{
 				/* check if anything whas been read !!! */
-					if (ch1) {
+					if (ch1)
+                    {
 						#ifdef SFFE_DEVEL
 							printf("%c", *ch1);
 						#endif
@@ -887,23 +961,28 @@ int sffe_parse(sffe ** parser, char *expression)
 						ch1 = NULL;
 					};
 					
-					/* if there is something on stack, flush it we need to read next parameter */
-					while (stack->size) {
-						sfpopstack(NULL);
+					/* if there is something on stack, flush if we need to read next parameter */
+					while (stack->size)
+                    {
+                        sfpopstack();
+#ifdef SFFE_DEVEL
+                        printf("%c",stack->stck[stack->size].c);
+#endif
 					}
 
 					/* wrong number of parameters */
-					ch2 = (char *) (stack->prev->stck + stack->prev->size - 1);
-					
-					if ((((struct opstack__ *) ch2)->t & 0x1f) == 1) {
+                    struct opstack__ *stack_ = (stack->prev->stck + stack->prev->size - 1);
+					if ((stack_->t & 0x1f) == 1)
+                    {
 						errset(PARCNTERROR);
 					}
-					
-					((struct opstack__ *) ch2)->t = 0x60 | ((((struct opstack__ *) ch2)->t & 0x1f) - 1);
-				break;
+					/* reduce a number of allowed parameters */
+					stack_->t = 0x60 | max(0,(stack_->t & 0x1f) - 1);
+                }break;
 				/* )  */
-				case ')':
-					if (ch1) {
+                case ')':{
+					if (ch1)
+                    {
 						#ifdef SFFE_DEVEL
 							printf("%c", *ch1);
 						#endif
@@ -912,38 +991,51 @@ int sffe_parse(sffe ** parser, char *expression)
 					ch1 = NULL;
 
 					/* if there is something on stack, flush it we need to read next parameter */
-					while (stack->size) {
-						sfpopstack(NULL);
+					while (stack->size)
+                    {
+                        sfpopstack();
+#ifdef SFFE_DEVEL
+                        printf("%c",stack->stck[stack->size].c);
+#endif
 					}
 
-					if (!stack->prev) {
+                    /* no stack available = stack overrelesed */
+					if (!stack->prev)
+                    {
 						errset(STACKERROR);
 					}
 					
 					stmp = stack;
-					free(stmp->stck);
-					stack = stmp->prev;
+                    stack = stmp->prev;
+
+                    /* destroy block stack */
+                    free(stmp->stck);
 					free(stmp);
 
-					/* i was reading function, if so at the top of current
-					 *  stack is a function. identified by '*.t==3'  
-					 **/
-					ch2 = (char *) (stack->stck + stack->size - 1);
-					if ((((struct opstack__ *) ch2)->t & 0xE0) == 0x60) {
+					/* parser was reading function, at the top of current stack is a function. identified by '*.t==3' */
+                    struct opstack__ *stack_ = (stack->stck + stack->size - 1);
+					if ((stack_->t & 0xE0) == 0x60)
+                    {
 	
 						/* wrong number of parameters */
-						if ((((struct opstack__ *) ch2)->t & 0x1f) > 1) {
+						if ((stack_->t & 0x1f) > 1)
+                        {
 							errset(PARCNTERROR);
 						}
 						
-						if (!err) {
-							sfpopstack(NULL);
-							if (stack->size) {
+						if (!err)
+                        {
+                            sfpopstack();
+#ifdef SFFE_DEVEL
+                            printf("%c",stack->stck[stack->size].c);
+#endif
+							if (stack->size)
+                            {
 								stack->stck = (struct opstack__ *) realloc(stack->stck, (stack->size) * sizeof(struct opstack__));
 							}
 						};
 					};
-				break;
+                }break;
 				/* n */
 				case 'n':
 					ch1 = ech;
@@ -955,44 +1047,43 @@ int sffe_parse(sffe ** parser, char *expression)
 		if (!err) 
 		{
 		
-			if (ch1) {
+			if (ch1)
+            {
 				#ifdef SFFE_DEVEL
 					printf("%c", *ch1);
 				#endif
 				arg += 1;
 			}
 
-			while (stack) {	/*clean up stack */
-				while (stack->size) {
-					stack->size -= 1;
-					
-					#ifdef SFFE_DEVEL
-						printf("%c", stack->stck[stack->size].c);
-					#endif
-					
-					insertfnc(NULL);
-					p->oprs[ui1].arg = (sfarg *) arg;
-					p->oprs[ui1].f = stack->stck[stack->size].f;
-					ui1 += 1;
-					arg += 1;
+			/*clean up stack */
+            while (stack)
+            {
+				while (stack->size)
+                {
+                    sfpopstack();
+#ifdef SFFE_DEVEL
+                    printf("%c",stack->stck[stack->size].c);
+#endif
 				};
 				
 				free(stack->stck);
 				stmp = stack->prev;
-				free(stack);
+                free(stack);
 				stack = stmp;
 			};
 
 			/* set up formula call stack */
 			(p->args)->parg = NULL;
 			
-			for (ui1 = 1; ui1 < p->argCount; ui1 += 1) {
+			for (ui1 = 1; ui1 < p->argCount; ui1 += 1)
+            {
 				(p->args + ui1)->parg = (p->args + ui1 - 1);
 			}
 
 	#ifdef SFFE_DEVEL
 			printf("\n| numbers: ");
-			for (ui1 = 0; ui1 < p->argCount; ui1 += 1) {
+			for (ui1 = 0; ui1 < p->argCount; ui1 += 1)
+            {
 				if ((p->args + ui1)->value) 
 				{
 					#ifdef SFFE_COMPLEX
@@ -1006,12 +1097,14 @@ int sffe_parse(sffe ** parser, char *expression)
 			};
 
 			printf("\n| functions fnctbl:");
-			for (ui1 = 0; ui1 < p->oprCount; ui1 += 1) {
+			for (ui1 = 0; ui1 < p->oprCount; ui1 += 1)
+            {
 				printf(" 0x%.6X [%s]", (int) fnctbl[ui1]->fptr, fnctbl[ui1]->name);
 			}
 
 			printf("\n| functions used ptrs:");
-			for (ui1 = 0; ui1 < p->oprCount; ui1 += 1) {
+			for (ui1 = 0; ui1 < p->oprCount; ui1 += 1)
+            {
 				printf(" 0x%.6X", (int) p->oprs[ui1].f);
 			}
 			
@@ -1023,9 +1116,12 @@ int sffe_parse(sffe ** parser, char *expression)
 	 __FILE__, __LINE__);
 
 	#endif
-		} else {		/* prevent memory leaks */
+		} else {
+            /* prevent memory leaks */
 
-			while (stack) {	/* clean up stack */
+            /* clean up stack */
+			while (stack)
+            {
 				free(stack->stck);
 				stmp = stack->prev;
 				free(stack);
@@ -1040,84 +1136,90 @@ int sffe_parse(sffe ** parser, char *expression)
 			err = MEMERROR;
 		};
 
-    if (err) {
+    if (err)
+    {
 		#ifdef SFFE_DEVEL
 			/* in debug mode report errors on stdout */
-			printf("Parser error : ");
-			switch (err) {
-			case MEMERROR:
-				printf(" MEMORY ERROR!!");
-				break;
-			case UNBALANCEDBRACKES:
-				printf(" UNBALANCED BRACKETS!! : %s\n", ch1);
-				break;
-			case INVALIDFUNCTION:
-				printf(" UNKNOWN FUNCTION!! : %s\n", ch1);
-				break;
-			case INAVLIDNUMBER:
-				printf(" NUMBER FORMAT!! : %s\n", ch1);
-				break;
-			case UNKNOWNCONST:
-				printf(" UNKOWN CONST or VAR NAME!! : %s\n", ch1);
-				break;
-			case OPERATOR:
-				printf(" UNKNOWN OPERATOR!! : %s\n", ch1);
-				break;
-			case STACKERROR:
-				printf(" INTERNAL STACK CORRUPTED!! : %s\n", ch1);
-				break;
-			case PARCNTERROR:
-				printf(" FUNCTION PARAMETERS ERROR!! : %s\n", ch1);
-				break;
-			case NO_FUNCTIONS:
-				printf("Formula error ! ARE YOU KIDDING ME ?!? : %s", ch1);
-				break;
-			};
+        printf("Parser error : ");
+        
+        switch (err)
+        {
+            case MEMERROR:
+                printf(" MEMORY ERROR!!");
+                break;
+            case UNBALANCEDBRACKES:
+                printf(" UNBALANCED BRACKETS!! : %s\n", ch1);
+                break;
+            case INVALIDFUNCTION:
+                printf(" UNKNOWN FUNCTION!! : %s\n", ch1);
+                break;
+            case INAVLIDNUMBER:
+                printf(" NUMBER FORMAT!! : %s\n", ch1);
+                break;
+            case UNKNOWNCONST:
+                printf(" UNKOWN CONST or VAR NAME!! : %s\n", ch1);
+                break;
+            case OPERATOR:
+                printf(" UNKNOWN OPERATOR!! : %s\n", ch1);
+                break;
+            case STACKERROR:
+                printf(" INTERNAL STACK CORRUPTED!! : %s\n", ch1);
+                break;
+            case PARCNTERROR:
+                printf(" FUNCTION PARAMETERS ERROR!! : %s\n", ch1);
+                break;
+            case NO_FUNCTIONS:
+                printf("Formula error ! ARE YOU KIDDING ME ?!? : %s", ch1);
+                break;
+                
+        };
 		#endif
 		
 		/* try to store error message */
 		if (p->errormsg)
-			switch (err) {
-			case MEMERROR:
-			sprintf(p->errormsg, "Formula error ! MEMORY ERROR!!");
-			break;
-			case UNBALANCEDBRACKES:
-			sprintf(p->errormsg,
-				"Formula error ! UNBALANCED BRACKETS!! : %s", ch1);
-			break;
-			case INVALIDFUNCTION:
-			sprintf(p->errormsg,
-				"Formula error ! UNKNOWN FUNCTION!! : %s", ch1);
-			break;
-			case INAVLIDNUMBER:
-			sprintf(p->errormsg,
-				"Formula error ! NUMBER FORMAT!! : %s", ch1);
-			break;
-			case UNKNOWNCONST:
-			sprintf(p->errormsg,
-				"Formula error ! UNKOWN CONST or VAR NAME!! : %s",
-				ch1);
-			break;
-			case OPERATOR:
-			sprintf(p->errormsg,
-				"Formula error ! UNKNOWN OPERATOR!! : %s", ch1);
-			break;
-			case STACKERROR:
-			sprintf(p->errormsg,
-				"Formula error ! INTERNAL STACK CORRUPTED!! : %s",
-				ch1);
-			break;
-			case PARCNTERROR:
-			sprintf(p->errormsg,
-				"Formula error ! FUNCTION PARAMETERS ERROR!! : %s",
-				ch1);
-			break;
-			case NO_FUNCTIONS:
-			sprintf(p->errormsg,
-				"Formula error ! ARE YOU KIDDING ME ?!? : %s",
-				ch1);
-			break;
-			};
+        {
+            switch (err) {
+                case MEMERROR:
+                    sprintf(p->errormsg, "Formula error ! MEMORY ERROR!!");
+                    break;
+                case UNBALANCEDBRACKES:
+                    sprintf(p->errormsg,
+                            "Formula error ! UNBALANCED BRACKETS!! : %s", ch1);
+                    break;
+                case INVALIDFUNCTION:
+                    sprintf(p->errormsg,
+                            "Formula error ! UNKNOWN FUNCTION!! : %s", ch1);
+                    break;
+                case INAVLIDNUMBER:
+                    sprintf(p->errormsg,
+                            "Formula error ! NUMBER FORMAT!! : %s", ch1);
+                    break;
+                case UNKNOWNCONST:
+                    sprintf(p->errormsg,
+                            "Formula error ! UNKOWN CONST or VAR NAME!! : %s",
+                            ch1);
+                    break;
+                case OPERATOR:
+                    sprintf(p->errormsg,
+                            "Formula error ! UNKNOWN OPERATOR!! : %s", ch1);
+                    break;
+                case STACKERROR:
+                    sprintf(p->errormsg,
+                            "Formula error ! INTERNAL STACK CORRUPTED!! : %s",
+                            ch1);
+                    break;
+                case PARCNTERROR:
+                    sprintf(p->errormsg,
+                            "Formula error ! FUNCTION PARAMETERS ERROR!! : %s",
+                            ch1);
+                    break;
+                case NO_FUNCTIONS:
+                    sprintf(p->errormsg,
+                            "Formula error ! ARE YOU KIDDING ME ?!? : %s",
+                            ch1);
+                    break;
+            };
+        }
 			
 		/* if error -> clean up */
 		sffe_clear(&p);
@@ -1137,12 +1239,16 @@ int sffe_parse(sffe ** parser, char *expression)
 #undef OPERATOR
 #undef STACKERROR
 #undef PARCNTERROR
+#undef max
+    
+    /* free lookup tables */
     free(expcode);
     free(fnctbl);
 
 #ifdef SFFE_DEVEL
     printf("\nparse - END\n");
 #endif
+    
     return err;
 };
 
