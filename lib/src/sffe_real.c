@@ -11,7 +11,7 @@
  extern "C" {
 #endif
 
-const sffunction sfcmplxfunc[sffnctscount] =  { 
+const sffunction sfcmplxfunc[sffnctscount] =  {
 		/* basic real arithmetics */
 		{sfpow,2,"^\0"}, 
 		{sfadd,2,"+\0"}, 
@@ -52,165 +52,165 @@ const cfptr sfcvals[sfvarscount] =
 { sfcPI, sfcPI2, sfc2PI, sfcE, sfcEPS, sfcRND };
 
 
-sfarg *sfadd( sfarg * const p ) /* + */
+sfarg *sfadd( sfarg * const p, void *payload ) /* + */
 {
 	sfvalue(p) = sfvalue( sfaram2(p) ) + sfvalue( sfaram1(p) );
 	return sfaram2(p);
 };
 
-sfarg *sfsub( sfarg * const p ) /* - */
+sfarg *sfsub( sfarg * const p, void *payload ) /* - */
 {
 	sfvalue(p) = sfvalue( sfaram2(p) ) - sfvalue( sfaram1(p) );
 	return sfaram2(p);
 };
 
-sfarg *sfmul( sfarg * const p ) /* *  */
+sfarg *sfmul( sfarg * const p, void *payload ) /* *  */
 {
 	sfvalue(p) = sfvalue( sfaram2(p) ) * sfvalue( sfaram1(p) );
 	return sfaram2(p);
 };
 
-sfarg *sfdiv( sfarg * const p ) /*  / */
+sfarg *sfdiv( sfarg * const p, void *payload ) /*  / */
 {
 	sfvalue(p) = sfvalue( sfaram2(p) ) / sfvalue( sfaram1(p) );
 	return sfaram2(p);
 };
 
-sfarg *sfsin( sfarg * const p ) /* sin */
+sfarg *sfsin( sfarg * const p, void *payload ) /* sin */
 {
 	sfvalue(p) = sin( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfcos( sfarg * const p ) /* cos */
+sfarg *sfcos( sfarg * const p, void *payload ) /* cos */
 {
 	sfvalue(p) = cos( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sftan( sfarg * const p ) /* tan */
+sfarg *sftan( sfarg * const p, void *payload ) /* tan */
 {
 	sfvalue(p) = tan( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfcot( sfarg * const p ) /* ctan */
+sfarg *sfcot( sfarg * const p, void *payload ) /* ctan */
 {
 	sfvalue(p) = 1.0/tan( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfasin( sfarg * const p ) /* asin */
+sfarg *sfasin( sfarg * const p, void *payload ) /* asin */
 {
 	sfvalue(p) = asin( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfacos( sfarg * const p ) /* acos */
+sfarg *sfacos( sfarg * const p, void *payload ) /* acos */
 {
 	sfvalue(p) = acos( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfatan( sfarg * const p ) /* atan */
+sfarg *sfatan( sfarg * const p, void *payload ) /* atan */
 {
 	sfvalue(p) = atan( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfacot( sfarg * const p ) /* actan */
+sfarg *sfacot( sfarg * const p, void *payload ) /* actan */
 {
 	sfvalue(p) = 1.0/atan( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfatan2( sfarg * const p ) /* atan2 */
+sfarg *sfatan2( sfarg * const p, void *payload ) /* atan2 */
 {
 	sfvalue(p) = atan2( sfvalue( sfaram2(p) ), sfvalue( sfaram1(p) ) );
 	return sfaram2(p);
 };
 
 
-sfarg *sfsinh( sfarg * const p ) /* sinh */
+sfarg *sfsinh( sfarg * const p, void *payload ) /* sinh */
 {
 	sfvalue(p) = sinh( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfcosh( sfarg * const p ) /* cosh */
+sfarg *sfcosh( sfarg * const p, void *payload ) /* cosh */
 {
 	sfvalue(p) = cosh( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sftanh( sfarg * const p ) /* tanh */
+sfarg *sftanh( sfarg * const p, void *payload ) /* tanh */
 {
 	sfvalue(p) = tanh( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfcoth( sfarg * const p ) /* ctanh */
+sfarg *sfcoth( sfarg * const p, void *payload ) /* ctanh */
 {
 	sfvalue(p) = 1.0/tanh( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
 
-sfarg *sfexp( sfarg * const p ) /* exp */
+sfarg *sfexp( sfarg * const p, void *payload ) /* exp */
 {
 	sfvalue(p) = exp( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sflog( sfarg * const p ) /* log */
+sfarg *sflog( sfarg * const p, void *payload ) /* log */
 {
 	sfvalue(p) = log( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sflog10( sfarg * const p ) /* log10 */
+sfarg *sflog10( sfarg * const p, void *payload ) /* log10 */
 {
 	sfvalue(p) = log10( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sflogN( sfarg * const p ) /* logN */
+sfarg *sflogN( sfarg * const p, void *payload ) /* logN */
 {
 	sfvalue(p) = log( sfvalue( sfaram1(p) ) )/log( sfvalue( sfaram2(p) ) );;
 	return sfaram2(p);
 };
 
-sfarg *sfpow( sfarg * const p ) /* pow */
+sfarg *sfpow( sfarg * const p, void *payload ) /* pow */
 {
 	sfvalue(p) = pow( sfvalue( sfaram2(p) ), sfvalue( sfaram1(p) ) );
 	return sfaram2(p);
 };
 
-sfarg *sfsqr( sfarg * const p ) /* sqr */
+sfarg *sfsqr( sfarg * const p, void *payload ) /* sqr */
 {
 	sfvalue(p) = sfvalue( sfaram1(p) )*sfvalue( sfaram1(p) );
 	return sfaram1(p);
 };
 
-sfarg *sfsqrt( sfarg * const p ) /* sqrt */
+sfarg *sfsqrt( sfarg * const p, void *payload ) /* sqrt */
 {
 	sfvalue(p) = sqrt( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfceil( sfarg * const p ) /* ceil */
+sfarg *sfceil( sfarg * const p, void *payload ) /* ceil */
 {
 	sfvalue(p) = ceil( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sffloor( sfarg * const p ) /* floor */
+sfarg *sffloor( sfarg * const p, void *payload ) /* floor */
 {
 	sfvalue(p) = floor( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);
 };
 
-sfarg *sfabs( sfarg * const p ) /* abs */
+sfarg *sfabs( sfarg * const p, void *payload ) /* abs */
 {
 	sfvalue(p) = fabs( sfvalue( sfaram1(p) ) );
 	return sfaram1(p);

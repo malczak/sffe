@@ -82,7 +82,7 @@ sffunction *sffe_function(char *fn, size_t len)
         }
     }
     return NULL;
-};
+}
 
 sffunction *sffe_operator(char op)
 {
@@ -104,7 +104,7 @@ sffunction *sffe_operator(char op)
             break;
     };
     return NULL;
-};
+}
 
 void *sffe_const(char *fn, size_t len, void *ptr)
 {
@@ -118,7 +118,7 @@ void *sffe_const(char *fn, size_t len, void *ptr)
         };
     }
     return NULL;
-};
+}
 
 /************************* custom function */
 
@@ -133,7 +133,7 @@ SFFE_EXPORT sffe *sffe_alloc(void)
     
     memset(rp, 0, sizeof(sffe));
     return rp;
-};
+}
 
 SFFE_EXPORT void sffe_clear(sffe ** parser)
 {
@@ -165,7 +165,7 @@ SFFE_EXPORT void sffe_clear(sffe ** parser)
     p->expression = NULL;
     p->args = NULL;
     p->oprs = NULL;
-};
+}
 
 SFFE_EXPORT void sffe_free(sffe ** parser)
 {
@@ -193,7 +193,7 @@ SFFE_EXPORT void sffe_free(sffe ** parser)
     
     free(*parser);
     parser = NULL;
-};
+}
 
 SFFE_EXPORT sfNumber sffe_eval(sffe * const parser)
 {
@@ -204,14 +204,14 @@ SFFE_EXPORT sfNumber sffe_eval(sffe * const parser)
     for (optr = optr; optr != optrl; optr += 1, optro += 1)
     {
 		optro->arg->parg = optro->arg - 1;
-		#ifdef SFFE_ONLYCOUNT
-			optr->arg->parg = optr->f( optr->arg )->parg;
-		#else
-			optr->arg->parg = optr->f->fptr( optr->arg )->parg;
-		#endif
+#ifdef SFFE_DIRECT_FPTR
+        optr->arg->parg = optr->fnc( optr->arg, NULL )->parg;
+#else
+        optr->arg->parg = optr->fnc->fptr( optr->arg, optr->fnc->payload )->parg;
+#endif
 	};
     return *(parser->result);
-};
+}
 
 SFFE_EXPORT sfvariable* sffe_var(sffe *const parser, const char* name)
 {
@@ -262,7 +262,7 @@ SFFE_EXPORT sfNumber* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* 
 
     parser_->varCount += 1;
     return var->value;
-};
+}
 
 SFFE_EXPORT void sffe_regvars(sffe ** parser, unsigned int cN, sfNumber ** vptrs, char* const* names)
 {
@@ -271,7 +271,7 @@ SFFE_EXPORT void sffe_regvars(sffe ** parser, unsigned int cN, sfNumber ** vptrs
         cN -= 1;
         sffe_regvar(parser, (vptrs ? vptrs[cN] : NULL), names[cN]);
     }
-};
+}
 
 SFFE_EXPORT sfNumber* sffe_setvar(sffe ** parser, sfNumber vptrs, const char* name)
 {
@@ -287,9 +287,9 @@ SFFE_EXPORT sfNumber* sffe_setvar(sffe ** parser, sfNumber vptrs, const char* na
     
     memcpy(value, &vptrs, sizeof(sfNumber));
     return value;
-};
+}
 
-SFFE_EXPORT void *sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt, sffptr funptr)
+SFFE_EXPORT void *sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt, sffptr funptr, void *payload)
 {
     sffe *parser_ = *parser;
     sffunction *sff;
@@ -303,9 +303,9 @@ SFFE_EXPORT void *sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt,
 		
     sff = parser_->userf + parser_->userfCount;
     
-//    sf_strdup(&var->name, name);
+    sf_strdup(&sff->name, vname);
 
-    strcpy(sff->name, vname);
+//    strcpy(sff->name, vname);
     
     for (i = 0; i < strlen(vname); i += 1)
     {
@@ -317,7 +317,7 @@ SFFE_EXPORT void *sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt,
     
     parser_->userfCount += 1;
     return (void *) sff;
-};
+}
 
 sfNumber* sffe_variable(sffe * const p, char *fname, size_t len)
 {
@@ -330,7 +330,7 @@ sfNumber* sffe_variable(sffe * const p, char *fname, size_t len)
         return var->value;
     }
     return NULL;
-};
+}
 
 sffunction *userfunction(const sffe * const p, char *fname, size_t len)
 {
@@ -343,7 +343,7 @@ sffunction *userfunction(const sffe * const p, char *fname, size_t len)
 		}
 	}
     return NULL;
-};
+}
 
 char sffe_donum(char **str)
 {				/* parse number in format [-+]ddd[.dddd[e[+-]ddd]]  */
@@ -395,7 +395,7 @@ char sffe_donum(char **str)
     if (flag & 0x80)
 	flag ^= 0x80;
     return flag >> 4;
-};
+}
 
 #ifdef SFFE_COMPLEX
 char sffe_docmplx(char **str, sfarg ** arg)
@@ -414,7 +414,7 @@ char sffe_docmplx(char **str, sfarg ** arg)
 
     cmplxset(*(*arg)->value, atof(chr), atof(chi));
     return 0;
-};
+}
 #endif
 
 char sffe_doname(char **str)
@@ -433,7 +433,7 @@ char sffe_doname(char **str)
 		return 3;		/*error :( this means something like X. COS. PI. */
 		
     return 1;
-};
+}
 
 int sffe_parse(sffe ** parser, char *expression)
 {
@@ -443,10 +443,10 @@ int sffe_parse(sffe ** parser, char *expression)
 		char c;			/* used in debug build to store operator character */
 #endif
 		unsigned char t;	/* store priority of the operator 'f' */
-#ifdef SFFE_ONLYCOUNT
-        sffptr 	f;
+#ifdef SFFE_DIRECT_FPTR
+        sffptr fnc;
 #else
-        sffunction*	f;
+        sffunction*	fnc;
 #endif
     };
     
@@ -501,7 +501,7 @@ int sffe_parse(sffe ** parser, char *expression)
 				stack->size-=1;\
 				insertfnc();\
 				p->oprs[ui1].arg = (sfarg*)arg;\
-				p->oprs[ui1].f = stack->stck[stack->size].f;\
+				p->oprs[ui1].fnc = stack->stck[stack->size].fnc;\
 				ui1 += 1;\
 				arg += 1;\
 			};
@@ -546,7 +546,7 @@ int sffe_parse(sffe ** parser, char *expression)
     printf
 	("\n|-----------------------------------------\n+ > %s[%d] - parsing\n|-----------------------------------------\n",
 	 __FILE__, __LINE__);
-    printf("| input (len.=%d): |%s|\n", strlen(p->expression),
+    printf("| input (len.=%tu): |%s|\n", strlen(p->expression),
 	   p->expression);
 #endif
 
@@ -617,7 +617,7 @@ int sffe_parse(sffe ** parser, char *expression)
 	}
 
 #ifdef SFFE_DEVEL
-    printf("| check (len.=%d): |%s|\n", strlen(p->expression),
+    printf("| check (len.=%tu): |%s|\n", strlen(p->expression),
 	   p->expression);
 #endif
 
@@ -825,7 +825,7 @@ int sffe_parse(sffe ** parser, char *expression)
     if (!p->oprCount && p->argCount == 1) {
 		p->oprs = (sfopr *) malloc(p->argCount * sizeof(sfopr));
 		p->oprs[0].arg = (sfarg *) p->args;
-		p->oprs[0].f = NULL;
+		p->oprs[0].fnc = NULL;
 		p->result = (sfNumber *) p->args->value;
     } else
 /*! PHASE 3 !!!!! create sffe 'stack' notation ]:-> */
@@ -897,16 +897,18 @@ int sffe_parse(sffe ** parser, char *expression)
 						stack->stck[stack->size].c = *ech;
 					#endif
 				
+                    /* store operator prority */
+                    stack->stck[stack->size].t = prio;
+
                     sffunction *function =  *f;
 					/* get function pointer */
-					#ifdef SFFE_ONLYCOUNT
-						stack->stck[stack->size].f = function->fptr;
-					#else
-						stack->stck[stack->size].f = function;
-					#endif
+#ifdef SFFE_DIRECT_FPTR
+                    stack->stck[stack->size].fnc = function->fptr;
+#else
+                    stack->stck[stack->size].fnc = function;
+#endif
 
-                    stack->stck[stack->size].t = prio; /* store operator prority */
-					stack->size += 1;
+                    stack->size += 1;
 				
 					f += 1;
 					ch1 = NULL;
@@ -924,11 +926,11 @@ int sffe_parse(sffe ** parser, char *expression)
 
                     sffunction *function =  *f;
 					/* get function pointer */
-					#ifdef SFFE_ONLYCOUNT
-						stack->stck[stack->size].f = function->fptr;
-					#else
-						stack->stck[stack->size].f = function;
-					#endif
+#ifdef SFFE_DIRECT_FPTR
+                    stack->stck[stack->size].fnc = function->fptr;
+#else
+                    stack->stck[stack->size].fnc = function;
+#endif
 
 					stack->size += 1;
 					f += 1;
@@ -1105,7 +1107,7 @@ int sffe_parse(sffe ** parser, char *expression)
 			printf("\n| functions used ptrs:");
 			for (ui1 = 0; ui1 < p->oprCount; ui1 += 1)
             {
-				printf(" 0x%.6X", (int) p->oprs[ui1].f);
+				printf(" 0x%.6X", (int) p->oprs[ui1].fnc);
 			}
 			
 			double time_spent = (double)(clock() - begin) / CLOCKS_PER_SEC;
@@ -1250,7 +1252,7 @@ int sffe_parse(sffe ** parser, char *expression)
 #endif
     
     return err;
-};
+}
 
 #undef sfset
 #undef sfvar

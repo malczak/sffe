@@ -17,33 +17,33 @@
   extern "C" {
  #endif
 
-sfarg *sfadd( sfarg * const p ); /*  +  */
-sfarg *sfsub( sfarg * const p ); /*  -  */
-sfarg *sfmul( sfarg * const p ); /*  *  */
-sfarg *sfdiv( sfarg * const p ); /*  /  */
-sfarg *sfsin( sfarg * const p ); /* sin */
-sfarg *sfcos( sfarg * const p ); /* cos */
-sfarg *sftan( sfarg * const p ); /* tan */
-sfarg *sfcot( sfarg * const p ); /* ctan */
-sfarg *sfasin( sfarg * const p ); /* asin */
-sfarg *sfacos( sfarg * const p ); /* acos */
-sfarg *sfatan( sfarg * const p ); /* atan */
-sfarg *sfacot( sfarg * const p ); /* actan */
-sfarg *sfatan2( sfarg * const p ); /* atan2 */
-sfarg *sfsinh( sfarg * const p ); /* sinh */
-sfarg *sfcosh( sfarg * const p ); /* cosh */
-sfarg *sftanh( sfarg * const p ); /* tanh */
-sfarg *sfcoth( sfarg * const p ); /* ctanh */
-sfarg *sfexp( sfarg * const p ); /* exp */
-sfarg *sflog( sfarg * const p ); /* log */
-sfarg *sflog10( sfarg * const p ); /* log10 */
-sfarg *sflogN( sfarg * const p ); /* logN */
-sfarg *sfpow( sfarg * const p ); /* pow */
-sfarg *sfsqr( sfarg * const p ); /* sqr */
-sfarg *sfsqrt( sfarg * const p ); /* sqrt */
-sfarg *sfceil( sfarg * const p ); /* ceil */
-sfarg *sffloor( sfarg * const p ); /* floor */
-sfarg *sfabs( sfarg * const p ); /* abs */
+sfarg *sfadd( sfarg * const p, void *payload ); /*  +  */
+sfarg *sfsub( sfarg * const p, void *payload ); /*  -  */
+sfarg *sfmul( sfarg * const p, void *payload ); /*  *  */
+sfarg *sfdiv( sfarg * const p, void *payload ); /*  /  */
+sfarg *sfsin( sfarg * const p, void *payload ); /* sin */
+sfarg *sfcos( sfarg * const p, void *payload ); /* cos */
+sfarg *sftan( sfarg * const p, void *payload ); /* tan */
+sfarg *sfcot( sfarg * const p, void *payload ); /* ctan */
+sfarg *sfasin( sfarg * const p, void *payload ); /* asin */
+sfarg *sfacos( sfarg * const p, void *payload ); /* acos */
+sfarg *sfatan( sfarg * const p, void *payload ); /* atan */
+sfarg *sfacot( sfarg * const p, void *payload ); /* actan */
+sfarg *sfatan2( sfarg * const p, void *payload ); /* atan2 */
+sfarg *sfsinh( sfarg * const p, void *payload ); /* sinh */
+sfarg *sfcosh( sfarg * const p, void *payload ); /* cosh */
+sfarg *sftanh( sfarg * const p, void *payload ); /* tanh */
+sfarg *sfcoth( sfarg * const p, void *payload ); /* ctanh */
+sfarg *sfexp( sfarg * const p, void *payload ); /* exp */
+sfarg *sflog( sfarg * const p, void *payload ); /* log */
+sfarg *sflog10( sfarg * const p, void *payload ); /* log10 */
+sfarg *sflogN( sfarg * const p, void *payload ); /* logN */
+sfarg *sfpow( sfarg * const p, void *payload ); /* pow */
+sfarg *sfsqr( sfarg * const p, void *payload ); /* sqr */
+sfarg *sfsqrt( sfarg * const p, void *payload ); /* sqrt */
+sfarg *sfceil( sfarg * const p, void *payload ); /* ceil */
+sfarg *sffloor( sfarg * const p, void *payload ); /* floor */
+sfarg *sfabs( sfarg * const p, void *payload ); /* abs */
 
 //const eval
 void sfcPI( sfNumber *cnst );

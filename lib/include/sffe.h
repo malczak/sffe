@@ -8,7 +8,7 @@
 //	SFFE_DOUBLE - real math parser
 //	SFFE_COMPLEX - complex math parser
 //	SFFE_DEVEL - print extra info to stdout
-//	SFFE_ONLYCOUNT - less memory consuming (alwas should be defined)
+//	SFFE_DIRECT_FPTR - use direct function pointers (!!!) ommits payload
 //	SFFE_DLL - Windows DLL
 //	
 //   complex numbers (for SFFE_COMPLEX)
@@ -41,7 +41,6 @@
 	#define sfNumber		double	
 #endif
 
-
 typedef enum {
     sfvar_type_ptr,
     sfvar_type_managed_ptr
@@ -57,7 +56,7 @@ typedef struct sfargument__
 } sfarg;
 
 /* sffe function prototype, parameters order is right-to-left (cdecl) */
-typedef sfarg *(*sffptr) (sfarg * const a);
+typedef sfarg *(*sffptr)(sfarg * const a, void *payload);
 
 /* constats eval functions */
 typedef void (*cfptr) (sfNumber * cnst);
@@ -68,18 +67,19 @@ typedef struct
     sffptr fptr;
     unsigned char parcnt;
     /*FIXME changed from char* to char[20] to get rid of warnings during compilation */
-    char name[20];
+    char *name;
+    void *payload; // unmanaged opaque memory pointer
 } sffunction;
 
 /* basic sffe 'stack' operation ( function + result slot ) */
 typedef struct
 {
     sfarg*		arg;
-	#ifdef SFFE_ONLYCOUNT
-		sffptr 	f;
-	#else
-		sffunction*	f;
-	#endif
+#ifdef SFFE_DIRECT_FPTR
+    sffptr fnc;
+#else
+    sffunction*	fnc;
+#endif
 } sfopr;
 
 typedef struct
@@ -89,11 +89,13 @@ typedef struct
     sfNumber *value;
 } sfvariable;
 
-typedef struct sfcontext__ {
+typedef struct sfcontext__
+{
+    unsigned int funcsCount; /* number of default / user functions */
+    sffunction *functions;
     
-    unsigned int userfCount;	/* number of user functions */
-    sffunction *userf;
-
+    unsigned int constsCount;
+    cfptr *constants;
 } sffe_context;
 
 /* SFFE main structure */
@@ -132,6 +134,7 @@ typedef struct
 #define sfaram3(p) ((p)->parg->parg->parg)
 #define sfaram4(p) ((p)->parg->parg->parg->parg)
 #define sfaram5(p) ((p)->parg->parg->parg->parg->parg)
+#define sfparamN(p,N) struct sfargument__ *r = p->parg; while((--N)>0) r = r->parg; return r;
 /* and so on */
 
 
@@ -149,15 +152,12 @@ int sffe_parse(sffe ** parser, char *expression);
     
 /* evaulate function and return evaluation result */
 sfNumber sffe_eval(sffe * const parser);
-    
-/* evaluate without returnig result */
-//void sffe_eval2(sffe *const parser);
 
 /* get already registered variable pointer, NULL if variable was not registered */
 sfvariable* sffe_var(sffe *const parser, const char* name);
     
 /* register user function with name 'vname', with 'parcnt' parameters and defined with function pointed by 'funptr'*/
-void* sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt, sffptr funptr);
+void* sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt, sffptr funptr, void *payload);
     
 /* register single variable 'vptrs' identified by name 'vchars' */
 //void *sffe_regvar(sffe ** parser, sfNumber * vptrs, char vchars);
@@ -165,6 +165,10 @@ sfNumber* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* name);
     
 /* register multiple variables */
 void sffe_regvars(sffe ** parser, unsigned int cN, sfNumber ** vptrs, char* const* names);
+    
+//sffunction *sffe_function_alloc(char *name, sffptr function_pointer, unsigned char paramsCount, void *payload);
+
+//void sffe_function_free(sffunction* function);
     
 /* set 'vptrs' as 'vchars' variable  */
 sfNumber* sffe_setvar(sffe ** parser, sfNumber vptrs, const char* name);
