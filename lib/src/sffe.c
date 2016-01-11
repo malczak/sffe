@@ -229,13 +229,13 @@ SFFE_EXPORT sfvariable* sffe_var(sffe *const parser, const char* name)
     return NULL;
 }
 
-SFFE_EXPORT sfNumber* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* name)
+SFFE_EXPORT sfvariable* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* name)
 {
     sffe *parser_ = *parser;
     sfvariable *var = sffe_var(parser_, name);
     if(var)
     {
-        return var->value;
+        return var;
     }
 
     int vars_cnt = parser_->varCount + 1;
@@ -258,7 +258,7 @@ SFFE_EXPORT sfNumber* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* 
     sf_strdup(&var->name, name);
 
     parser_->varCount += 1;
-    return var->value;
+    return var;
 }
 
 SFFE_EXPORT void sffe_regvars(sffe ** parser, unsigned int cN, sfNumber ** vptrs, char* const* names)
@@ -277,16 +277,15 @@ SFFE_EXPORT sfNumber* sffe_setvar(sffe ** parser, sfNumber vptrs, const char* na
     sfvariable *var = sffe_var(parser_, name);
     if(!var)
     {
-        value = sffe_regvar(parser, NULL, name);
-    } else {
-        value = var->value;
+        var = sffe_regvar(parser, NULL, name);
     }
-
+    
+    value = var->value;
     memcpy(value, &vptrs, sizeof(sfNumber));
     return value;
 }
 
-SFFE_EXPORT void *sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt, sffptr funptr, void *payload)
+SFFE_EXPORT void *sffe_regfunc(sffe ** parser, const char *vname, unsigned int parcnt, sffptr funptr, void *payload)
 {
     sffe *parser_ = *parser;
     sffunction *sff;
@@ -332,7 +331,8 @@ sffunction *userfunction(const sffe * const p, char *fname, size_t len)
     unsigned char idx;
     for (idx = 0; idx < p->userfCount; idx += 1)
     {
-		if (!strncmp(fname, p->userf[idx].name, len))
+        const char * name = p->userf[idx].name;
+		if (strlen(name) == len && (!strncmp(fname, name, len)))
         {
 		    return (sffunction *) (p->userf + idx);
 		}
@@ -461,7 +461,7 @@ char sffe_doname(char **str)
     return 1;
 }
 
-int sffe_parse(sffe ** parser, char *expression)
+int sffe_parse(sffe ** parser, const char *expression)
 {
 /**************var area */
     struct opstack__ { // @todo replace with stack/list
@@ -568,6 +568,7 @@ int sffe_parse(sffe ** parser, char *expression)
     p->expression = (char *) malloc(strlen(expression) + 1);
     strcpy(p->expression, expression);
     ech = p->expression;
+    
     
 #ifdef SFFE_DEVEL
     printf("\n|-----------------------------------------\n+ > %s[%d] - parsing\n|-----------------------------------------\n",__FILE__, __LINE__);
@@ -949,9 +950,10 @@ int sffe_parse(sffe ** parser, char *expression)
 						opstck->c = 'f';
 					#endif
                     
+                    unsigned char  parcnt = function->parcnt & 0x1F;
 					/* mark operator as a function, and store number of available parameters (0 - unlimited) */
-					opstck->type = 0x60 | (function->parcnt & 0x1F);
-                    opstck->args = (function->parcnt & 0x1F);
+					opstck->type = 0x60 | parcnt;
+                    opstck->args = parcnt;
                     
 					/* get function pointer */
 #ifdef SFFE_DIRECT_FPTR
@@ -964,6 +966,13 @@ int sffe_parse(sffe ** parser, char *expression)
                     
 					f += 1;
 					ch1 = NULL;
+                    
+                    // consume ()
+//                    if(!parcnt)
+//                    {
+//                        ech += 2;
+//                    }
+                    
                 }break;	// skip to ( ???
 				/* (  */
                 case '(':{

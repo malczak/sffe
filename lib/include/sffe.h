@@ -102,7 +102,7 @@ typedef struct sfcontext__
 typedef struct
 {
 /*public*/
-    char *expression;		/* parsed expression (read-only) */
+    const char *expression;		/* parsed expression (read-only) */
     char *errormsg;         /* parser errors (read-only) */
     sfNumber *result;		/* evaluation result (read-only) */
     
@@ -148,20 +148,20 @@ sffe *sffe_alloc(void);
 void sffe_free(sffe ** parser);
     
 /* parse expression 'expression' and strore result in 'parser' struct, error (if any) returned */
-int sffe_parse(sffe ** parser, char *expression);
+int sffe_parse(sffe ** parser, const char *expression);
     
 /* evaulate function and return evaluation result */
 sfNumber sffe_eval(sffe * const parser);
-
+    
+/* register user function with name 'vname', with 'parcnt' parameters and defined with function pointed by 'funptr'*/
+void* sffe_regfunc(sffe ** parser, const char *vname, unsigned int parcnt, sffptr funptr, void *payload);
+    
 /* get already registered variable pointer, NULL if variable was not registered */
 sfvariable* sffe_var(sffe *const parser, const char* name);
     
-/* register user function with name 'vname', with 'parcnt' parameters and defined with function pointed by 'funptr'*/
-void* sffe_regfunc(sffe ** parser, char *vname, unsigned int parcnt, sffptr funptr, void *payload);
-    
 /* register single variable 'vptrs' identified by name 'vchars' */
 //void *sffe_regvar(sffe ** parser, sfNumber * vptrs, char vchars);
-sfNumber* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* name);
+sfvariable* sffe_regvar(sffe ** parser, sfNumber * vptrs, const char* name);
     
 /* register multiple variables */
 void sffe_regvars(sffe ** parser, unsigned int cN, sfNumber ** vptrs, char* const* names);
