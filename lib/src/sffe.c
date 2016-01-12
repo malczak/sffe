@@ -151,7 +151,7 @@ SFFE_EXPORT void sffe_clear(sffe ** parser)
 
     if (p->expression)
     {
-        free(p->expression);
+        free((char*)p->expression);
     }
 
     if (p->oprs)
@@ -551,7 +551,7 @@ int sffe_parse(sffe ** parser, const char *expression)
 
 /**************** CODE */
     fnctbl = NULL;
-    ech = expression;
+    ech = (char*)expression;
     expcode = (char *) malloc(1);
     err = 0;
     //parser
@@ -566,8 +566,8 @@ int sffe_parse(sffe ** parser, const char *expression)
     p->oprCount = 0;
     p->argCount = 0;
     p->expression = (char *) malloc(strlen(expression) + 1);
-    strcpy(p->expression, expression);
-    ech = p->expression;
+    strcpy((char*)p->expression, expression);
+    ech = (char*)p->expression;
     
     
 #ifdef SFFE_DEVEL
@@ -635,7 +635,7 @@ int sffe_parse(sffe ** parser, const char *expression)
 
     *ch2 = '\0';
 
-    p->expression = (char *) realloc(p->expression, strlen(p->expression) + 1);
+    p->expression = (char *) realloc((char*)p->expression, strlen(p->expression) + 1);
 
     if (ui1 && !err) {
         err = UNBALANCEDBRACKES;
@@ -650,7 +650,7 @@ int sffe_parse(sffe ** parser, const char *expression)
     ch2 = NULL;
     ui1 = 0;
     ch1 = NULL;			/*string starting position */
-    ech = p->expression;
+    ech = (char*)p->expression;
     opr = '(';			/* in case of leading '-' */
 
     while (*ech && !err)
