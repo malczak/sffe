@@ -20,6 +20,8 @@
 #define SFFE_H
 #include <stdlib.h>
 
+#define SFFE_DIRECT_FPTR 1
+
 #ifdef SFFE_REAL
  #define SFFE_DOUBLE 1
 #endif	
