@@ -307,19 +307,22 @@ void sffe_free(sffe ** parser)
   parser = NULL;
 }
 
+//avg time: 0.250767773750267
+//avg time: 0.252280894999276
+
 sfNumber sffe_eval(sffe * const parser)
 {
-  register sfopr *optro;
   register sfopr *optr = parser->oprs;
-  register sfopr *optrl = parser->oprs + parser->oprCount;
-  optro = optr;
+  register sfopr *optro = optr;
+  register sfopr *optrl = optr + parser->oprCount;
   for (; optr != optrl; optr += 1, optro += 1)
   {
     optro->arg->parg = optro->arg - 1;
+    sfarg* arg = optr->arg;
 #ifdef SFFE_DIRECT_FPTR
-    optr->arg->parg = optr->fnc( optr->arg, NULL )->parg;
+    arg->parg = optr->fnc( arg, NULL )->parg;
 #else
-    optr->arg->parg = optr->fnc->fptr( optr->arg, optr->fnc->payload )->parg;
+    arg->parg = optr->fnc->fptr( arg, optr->fnc->payload )->parg;
 #endif
   };
   return *(parser->result);
