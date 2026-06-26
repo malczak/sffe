@@ -38,15 +38,20 @@ lib/
       cmplx.asm         # x87 complex math, NASM syntax (Win/COFF)
       build.sh          # nasm -f elf  cmplx.asm  (legacy; see notes)
       build_win.sh      # nasm -f coff cmplx.asm  (legacy; see notes)
+test/
+  test_sffe.c           # Unit tests (Check framework)
+Makefile                # Builds the real back-end as a static lib + runs tests
+Dockerfile              # Minimal Alpine build/test/dev image
+docker-compose.yml      # `test` and `dev` convenience services
 README.md
 ```
 
-There is **no build system, no test suite, and no example/driver program**
-checked in. The library is meant to be compiled directly into a consumer
-project by adding `lib/src/sffe.c` plus exactly one back-end `.c` file, and
-putting `lib/include` on the include path. The asm `build.sh` scripts are
-marked legacy ("`../Makefile` already contains this compilation") but no
-Makefile exists in this repo.
+The library is also meant to be **droppable directly into a consumer
+project** without the build system: add `lib/src/sffe.c` plus exactly one
+back-end `.c` file, and put `lib/include` on the include path. The asm
+`build.sh` scripts are legacy ("`../Makefile` already contains this
+compilation") and refer to a Makefile that does not exist in this repo — the
+root `Makefile` here is new and covers only the real back-end.
 
 ## Build configuration (compile-time macros)
 
@@ -65,12 +70,20 @@ Behavior is controlled entirely by preprocessor defines (see the header of
 `sfNumber` is the scalar type and resolves per back-end: `double` for real,
 `gsl_complex` for GSL, and a `{double r, i;}` struct (`cmplx`) for asm.
 
-Example compile lines (no Makefile is provided, so invoke the compiler
-directly):
+> **Gotcha — the real back-end needs `SFFE_DOUBLE` explicitly.** `sffe_real.c`
+> and `sffe_real.h` guard their entire bodies with `#ifdef SFFE_DOUBLE`
+> *before* `sffe.h` is included, so `-DSFFE_REAL` alone (which only turns into
+> `SFFE_DOUBLE` *inside* `sffe.h`) compiles `sffe_real.c` to an empty object
+> and you get undefined references to `sfcmplxfunc`/`sfcnames`/`sfcvals`.
+> Always pass **both** `-DSFFE_REAL -DSFFE_DOUBLE` (this is what the `Makefile`
+> does).
+
+Example compile lines (invoke the compiler directly when not using the
+`Makefile`):
 
 ```sh
 # Real build
-cc -DSFFE_REAL -Ilib/include -c lib/src/sffe.c lib/src/sffe_real.c
+cc -DSFFE_REAL -DSFFE_DOUBLE -Ilib/include -c lib/src/sffe.c lib/src/sffe_real.c
 
 # Complex build via GSL
 cc -DSFFE_CMPLX_GSL -Ilib/include -c lib/src/sffe.c lib/src/sffe_cmplx_gsl.c $(pkg-config --cflags gsl)
@@ -82,6 +95,29 @@ cc -m32 -DSFFE_CMPLX_ASM -Ilib/include -c lib/src/sffe.c lib/src/sffe_cmplx_asm.
 
 Note the asm back-end is **32-bit x87** (uses `%ebp`/`%esp`, `fldl`, etc.)
 and will not assemble/link cleanly on a 64-bit-only toolchain without `-m32`.
+
+## Building & testing
+
+A `Makefile` and an Alpine-based Docker setup cover the **real back-end**
+(the complex back-ends are not wired in — see "Known issues"):
+
+```sh
+make           # build build/libsffe.a (static lib, real back-end)
+make test      # build the lib + compile/run the Check test suite
+make clean     # remove build/
+
+# Docker (minimal Alpine with gcc, make and the Check framework):
+docker compose run --rm test   # build + run tests in a container
+docker compose run --rm dev     # interactive shell, source bind-mounted
+```
+
+Tests live in `test/test_sffe.c` and use **Check**
+(https://libcheck.github.io/check/), a widely used C unit-testing framework,
+located at link time via `pkg-config`. The current suite has one stub case
+asserting `2+2*2 == 6`; add new cases with `START_TEST`/`tcase_add_test`. The
+`Makefile` compiles with `-Wall -Wextra`; the existing code emits a number of
+`unused parameter`/`missing initializer` warnings (leftovers from the
+`SFFE_DIRECT_FPTR` refactor) that are harmless.
 
 ## Public API (`sffe.h`)
 
@@ -198,8 +234,9 @@ slot pointer to continue the chain. Names are matched **case-insensitively**
   `POWI`/`POWDC` to plain `sfpow`.
 - `sf_priority` and the operator-table ordering are tightly coupled; the
   first five `sfcmplxfunc` entries must stay `^ + - * /`.
-- No automated tests exist — verify changes by writing a tiny driver that
-  calls `sffe_alloc`/`sffe_parse`/`sffe_eval` and compiles it against the
-  back-end you touched.
+- Test coverage is minimal — only the real back-end has a build target
+  (`make test`) and a single stub case so far. When touching the complex
+  back-ends, add tests and a build path for them too rather than relying on a
+  throwaway driver.
 </content>
 </invoke>

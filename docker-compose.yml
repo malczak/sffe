@@ -1,0 +1,17 @@
+# Convenience services for sffe.
+#
+#   docker compose run --rm test   # build the lib and run the Check test suite
+#   docker compose run --rm dev    # interactive shell with the source mounted
+services:
+  test:
+    build: .
+    command: make test
+
+  dev:
+    build: .
+    working_dir: /sffe
+    command: sh
+    tty: true
+    stdin_open: true
+    volumes:
+      - .:/sffe
