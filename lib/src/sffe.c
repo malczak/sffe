@@ -232,6 +232,27 @@ void *sffe_const(char *fn, size_t len, void *ptr)
   return NULL;
 }
 
+/* Unary negation, injected by the tokenizer for an operator-preceded '-(...)'
+   (see PHASE 2). Behaves like a one-argument built-in function so the
+   negation binds tightly to the following group. */
+static sfarg *sffe_neg(sfarg * const p, void *payload)
+{
+  (void) payload;
+#ifdef SFFE_COMPLEX
+  cmplxset(sfvalue(p),
+           -real(sfvalue(sfaram1(p))),
+           -imag(sfvalue(sfaram1(p))));
+#else
+  sfvalue(p) = -sfvalue(sfaram1(p));
+#endif
+  return sfaram1(p);
+}
+
+/* A function table entry for the injected negation. Its name is never matched
+   against input (the tokenizer references it directly), so it cannot collide
+   with a user expression. */
+static const sffunction sffe_neg_func = { sffe_neg, 1, "(neg)", NULL };
+
 /************************* custom function */
 
 
@@ -837,31 +858,52 @@ _argument += 1;\
       if (isdigit(*ech) || (strchr("/*^(", (int) token) && strchr("+-", *ech)))
       {
         ch1 = ech;		/* st = 1;  */
-        
+
         if (sffe_donum(&ech) > 1)
         {
           set_error(INAVLIDNUMBER);
         }
-        
-        /*epx */
-        _parser->args = (sfarg *) realloc(_parser->args, (++_parser->argCount) * sizeof(sfarg));
-        
-        if (!_parser->args)
+
+        /* A bare '-' directly before a group '(', following a binary operator
+           (* / ^), is a unary negation of that group. Emit it as a tight
+           negation function so precedence stays correct, e.g.
+           2^-(1+1) == 2^(-(1+1)) and 2/-(1+1) == 2/(-(1+1)).
+           A leading '-(' (token == '(' or start of expression) is left to the
+           legacy '-1 * (group)' form below, which already yields the
+           conventional precedence such as -(a)^2 == -(a^2). */
+        if ((ech - ch1) == 1 && *ch1 == '-' && *ech == '('
+            && strchr("*/^", (int) token))
         {
-          set_error(MEMERROR);
-        }
-        
-        _argument = _parser->args + _parser->argCount - 1;
-        /* '-n'/'+n', which was parsed as 0*n */
-        if ((ech - ch1) == 1 && (*ch1 == '-'))
-        {
-          sfset(_argument, -1)
+          _functions = (sffunction **) realloc(_functions, (_parser->oprCount + 1) * sizeof(sffunction *));
+
+          if (!_functions)
+          {
+            set_error(MEMERROR);
+          }
+
+          _functions[_parser->oprCount++] = (sffunction *) &sffe_neg_func;
+          token = 'f';
         } else {
-          sfset(_argument, atof(ch1));
+          /*epx */
+          _parser->args = (sfarg *) realloc(_parser->args, (++_parser->argCount) * sizeof(sfarg));
+
+          if (!_parser->args)
+          {
+            set_error(MEMERROR);
+          }
+
+          _argument = _parser->args + _parser->argCount - 1;
+          /* '-n'/'+n', which was parsed as 0*n */
+          if ((ech - ch1) == 1 && (*ch1 == '-'))
+          {
+            sfset(_argument, -1)
+          } else {
+            sfset(_argument, atof(ch1));
+          }
+
+          /*epx */
+          token = 'n';
         }
-        
-        /*epx */
-        token = 'n';
       } else
       /* if not, it can be complex number */
 #ifdef SFFE_COMPLEX

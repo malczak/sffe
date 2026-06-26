@@ -232,15 +232,17 @@ slot pointer to continue the chain. Names are matched **case-insensitively**
   `sfatan2` ignores its inputs, `sfceil`/`sffloor` are no-ops, `sfsqr` is
   implemented as `pow(z, z)` rather than `z*z`, and the table maps
   `POWI`/`POWDC` to plain `sfpow`.
-- **Unary minus before a group is mis-tokenized.** A leading `-` in front of
-  a bracket/function is emitted as the literal number `-1` plus an *implicit*
-  multiplication, i.e. `-(a)` becomes `-1*(a)`. This is correct under `+ - *`
-  (precedence `<=` the implicit `*`) but wrong under `^` and `/`:
-  `2^-(1+1)` evaluates to `1` instead of `0.25`, and `2/-(1+1)` to `-4`
-  instead of `-1`. Pinned by `test_unary_minus_group_known_bug` in
-  `test/test_sffe.c` (currently asserts the buggy values; flip them to the
-  correct ones when the tokenizer is fixed). Note `3(...)`-style implicit
-  multiplication itself works fine — the bug is specific to unary minus.
+- **Unary minus before a group** is handled in two ways by Phase 2. A
+  *leading* `-(...)` (at the start of an expression or after `(`) is emitted
+  as the literal `-1` plus an implicit multiplication — `-(a)` → `-1*(a)` —
+  which gives the conventional precedence `-(a)^n == -(a^n)`. An
+  *operator-preceded* `-(...)` (after `* / ^`) is instead injected as a tight
+  negation function (`sffe_neg` / `sffe_neg_func` in `sffe.c`), so
+  `2^-(1+1) == 2^(-(1+1)) == 0.25` and `2/-(1+1) == 2/(-(1+1)) == -1`. This
+  split is covered by `test_unary_minus_group_*` in `test/test_sffe.c`. (An
+  earlier version emitted `-1*(a)` in *all* cases, which was wrong under `^`
+  and `/`.) Note: numeric unary minus like `-2^2` is unaffected and still
+  parses the sign into the number (`(-2)^2 == 4`).
 - `sf_priority` and the operator-table ordering are tightly coupled; the
   first five `sfcmplxfunc` entries must stay `^ + - * /`.
 - Test coverage is minimal — only the real back-end has a build target
