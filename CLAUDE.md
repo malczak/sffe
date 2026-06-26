@@ -232,6 +232,15 @@ slot pointer to continue the chain. Names are matched **case-insensitively**
   `sfatan2` ignores its inputs, `sfceil`/`sffloor` are no-ops, `sfsqr` is
   implemented as `pow(z, z)` rather than `z*z`, and the table maps
   `POWI`/`POWDC` to plain `sfpow`.
+- **Unary minus before a group is mis-tokenized.** A leading `-` in front of
+  a bracket/function is emitted as the literal number `-1` plus an *implicit*
+  multiplication, i.e. `-(a)` becomes `-1*(a)`. This is correct under `+ - *`
+  (precedence `<=` the implicit `*`) but wrong under `^` and `/`:
+  `2^-(1+1)` evaluates to `1` instead of `0.25`, and `2/-(1+1)` to `-4`
+  instead of `-1`. Pinned by `test_unary_minus_group_known_bug` in
+  `test/test_sffe.c` (currently asserts the buggy values; flip them to the
+  correct ones when the tokenizer is fixed). Note `3(...)`-style implicit
+  multiplication itself works fine — the bug is specific to unary minus.
 - `sf_priority` and the operator-table ordering are tightly coupled; the
   first five `sfcmplxfunc` entries must stay `^ + - * /`.
 - Test coverage is minimal — only the real back-end has a build target
