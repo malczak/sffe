@@ -139,28 +139,28 @@ START_TEST(test_unary_minus_group_ok)
 END_TEST
 
 /*
- * KNOWN BUG (tokenization): a unary minus applied to a bracketed group is
- * emitted as the literal number -1 followed by an *implicit* multiplication
- * with the group, i.e. "-(a)"  ->  "-1 * (a)".
+ * Regression: a unary minus applied to a bracketed group used to be emitted
+ * as the literal number -1 followed by an *implicit* multiplication, i.e.
+ * "-(a)" -> "-1 * (a)". That was harmless under +, -, * but wrong under ^ and
+ * / (which bind tighter / are left-associative at equal precedence):
  *
- * That is harmless under +, -, * (precedence <= implicit *), but WRONG when
- * the preceding operator binds tighter or is left-associative at equal
- * precedence (^, /):
+ *     2^-(1+1)  was  (2^-1) * (1+1)  = 1     -- now 2^-2 = 0.25
+ *     2/-(1+1)  was  (2/-1) * (1+1)  = -4    -- now 2/-2 = -1
  *
- *     2^-(1+1)   parsed as  (2^-1) * (1+1)  = 1     -- should be 2^-2 = 0.25
- *     2/-(1+1)   parsed as  (2/-1) * (1+1)  = -4    -- should be 2/-2 = -1
- *
- * The asserts below pin the CURRENT (buggy) behaviour so the suite stays
- * green and this test flips the moment the tokenizer is fixed. When fixing
- * the parser, change these to the mathematically correct values noted above.
+ * The tokenizer now binds an operator-preceded '-(...)' as a tight negation
+ * function, so these evaluate to the mathematically correct values.
  */
-START_TEST(test_unary_minus_group_known_bug)
+START_TEST(test_unary_minus_group_tight_binding)
 {
-    ck_expr("2^-(1+1)", 1.0);     /* TODO: should be 0.25  (2^-2) */
-    ck_expr("2^-(2)",   1.0);     /* TODO: should be 0.25  (2^-2) */
-    ck_expr("4^-(2)",   0.5);     /* TODO: should be 0.0625 (4^-2) */
-    ck_expr("2/-(1+1)", -4.0);    /* TODO: should be -1    (2/-2) */
-    ck_expr("8/-(2)",   -16.0);   /* TODO: should be -4    (8/-2) */
+    ck_expr("2^-(1+1)", 0.25);     /* 2^-2 */
+    ck_expr("2^-(2)",   0.25);     /* 2^-2 */
+    ck_expr("4^-(2)",   0.0625);   /* 4^-2 */
+    ck_expr("2/-(1+1)", -1.0);     /* 2 / -2 */
+    ck_expr("8/-(2)",   -4.0);     /* 8 / -2 */
+    ck_expr("3^-(1)",   1.0 / 3.0);
+    /* The leading-minus precedence convention is preserved: -(a)^n == -(a^n) */
+    ck_expr("-(1+1)^2", -4.0);
+    ck_expr("(-(1+1))^2", 4.0);
 }
 END_TEST
 
@@ -187,7 +187,7 @@ static Suite *sffe_suite(void)
 
     TCase *tc_unary = tcase_create("unary_minus");
     tcase_add_test(tc_unary, test_unary_minus_group_ok);
-    tcase_add_test(tc_unary, test_unary_minus_group_known_bug);
+    tcase_add_test(tc_unary, test_unary_minus_group_tight_binding);
     suite_add_tcase(s, tc_unary);
 
     return s;
